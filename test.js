@@ -112,6 +112,23 @@ module.exports = {
             })
         },
 
+        'should return only once': function(t) {
+            var spy = mockHttpRequest(http, t, 0);
+            setImmediate(function() {
+                spy._mockReq.emit('error', new Error('request error'));
+                spy._mockRes.emit('error', new Error('response error'));
+                spy._mockRes.emit('end');
+            })
+            var returnCount = 0;
+            gm.httpRequest('http://some/url', function(err, res, body) {
+                returnCount += 1;
+                t.equal(returnCount, 1);
+                t.ok(err);
+                t.equal(err.message, 'request error');
+                setTimeout(function(){ t.done() }, 10);
+            })
+        },
+
         'errors': {
             'should require callback': function(t) {
                 try { gm.httpRequest("https://localhost") }

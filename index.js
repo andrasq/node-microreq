@@ -41,17 +41,21 @@ function httpRequest( uri, body, callback ) {
     requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body.length;
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
+    var returned = 0, callbackOnce = function( err, res, body ) { if (!returned++) callback(err, res, body) };
     var req = httpCaller.request(requestOptions, function(res) {
         var chunks = [];
         res.on('data', function(chunk) {
             chunks.push(chunk);
         })
         res.on('end', function() {
-            callback(null, res, Buffer.concat(chunks));
+            callbackOnce(null, res, Buffer.concat(chunks));
+        })
+        res.on('error', function(err) {
+            callbackOnce(err);
         })
     })
     req.on('error', function(err) {
-        callback(err);
+        callbackOnce(err);
     })
 
     req.write(body);
