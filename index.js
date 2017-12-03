@@ -27,11 +27,13 @@ function httpRequest( uri, body, callback ) {
     if (!uri || !callback) throw new Error("uri and callback required");
 
     var requestOptions = { headers: {} };
-    for (var k in typeof uri === 'object' && uri) if (k !== 'url' && k !== 'body' && k !== 'headers') requestOptions[k] = uri[k];
-    for (var k in uri.headers) requestOptions.headers[k] = uri.headers[k];
+    if (typeof uri === 'object') {
+        for (var k in uri) if (k !== 'url' && k !== 'body' && k !== 'headers') requestOptions[k] = uri[k];
+        for (var k in uri.headers) requestOptions.headers[k] = uri.headers[k];
+    }
 
-    var urlParts = Url.parse((typeof uri === 'string') ? uri : (uri.url || ""));
-    for (var k in { protocol:1, auth:1, hostname:1, port:1, query:1, path:1, hash:1, href:1 }) {
+    var urlParts, url = (typeof uri === 'string') ? uri : uri.url;
+    if (url) for (var k in (urlParts = Url.parse(url))) {
         if (urlParts[k] != null && requestOptions[k] == undefined) requestOptions[k] = urlParts[k];
     }
 
