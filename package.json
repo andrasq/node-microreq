@@ -1,0 +1,20 @@
+{
+  "name": "micro-request",
+  "version": "0.1.0",
+  "description": "tiny convenience wrapper around http.request",
+  "main": "index.js",
+  "author": "Andras",
+  "license": "Apache-2.0",
+  "repository": "https://gitnub.com/andrasq/node-micro-request",
+  "keywords": [ "http", "request", "small", "quick", "minimal", "thin", "light" ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "qnit": "0.19.0"
+  },
+  "scripts": {
+    "test": "qnit test.js",
+    "coverage": "nyc --reporter lcov --reporter text npm test",
+    "clean": "rm -rf .nyc_output coverage"
+  }
+}
