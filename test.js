@@ -27,7 +27,7 @@ module.exports = {
             })
         },
 
-        'should accept string url': function(t) {
+        'should accept and parse string url': function(t) {
             var spy = mockHttpRequest(http, t);
             gm.httpRequest('http://usern:passw@localhost:1337/path/name?a=12&b=34#hash5', function(err, res, body) {
                 t.equal(spy.callCount, 1);
@@ -63,6 +63,36 @@ module.exports = {
             });
         },
 
+        'should not set uri properties to undefined parsed properties': function(t) {
+            var spy = mockHttpRequest(http, t);
+            var uri = { url: "https://otherhost:1337" };
+            gm.httpRequest(uri, function(err, res, body) {
+                t.equal(spy.callCount, 1);
+                t.contains(spy.callArguments[0], {
+                    protocol: 'https:',
+                    hostname: 'otherhost'
+                });
+                t.ok(! ('url' in spy.callArguments[0]));
+                t.ok(! ('query' in spy.callArguments[0]));
+                t.ok(! ('hash' in spy.callArguments[0]));
+                t.done();
+            });
+        },
+
+        'should not overwrite uri properties with parsed properties': function(t) {
+            var spy = mockHttpRequest(http, t);
+            var uri = { protocol: 'https:', hostname: 'otherhost', url: 'http://localhost:1337' };
+            gm.httpRequest(uri, function(err, res, body) {
+                t.equal(spy.callCount, 1);
+                t.contains(spy.callArguments[0], {
+                    protocol: 'https:',
+                    hostname: 'otherhost'
+                });
+                t.ok(! ('url' in spy.callArguments[0]));
+                t.done();
+            });
+        },
+
         'should accept string body': function(t) {
             var spy = mockHttpRequest(http, t);
             gm.httpRequest('http://localhost', 'test req body', function(err, res, body) {
@@ -89,8 +119,8 @@ module.exports = {
             })
         },
 
-        'should make call to empty url': function(t) {
-            // the url "" unfortantely is a valid url, it uses all defaults -- http://localhost:80/
+        'should make call to all-defaults uri': function(t) {
+            // the url "" is a valid url, it uses all defaults -- http://localhost:80/
             // and returns the response if there is a localhost http server running.
             // Or errors out if not.  This test just runs all branch points of the code.
             gm.httpRequest({}, function(err, res, body) {
@@ -138,7 +168,7 @@ module.exports = {
                 }
             },
 
-            'should require url': function(t) {
+            'should require uri': function(t) {
                 try { gm.httpRequest("", function(){}) }
                 catch (err) {
                     t.contains(err.message, 'required');
