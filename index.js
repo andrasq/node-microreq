@@ -13,8 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  *
- * upload legacy stackdriver custom metrics to google stackriver
- *
  * 2017-12-04 - AR.
  */
 

@@ -1,5 +1,8 @@
 micro-request
 =============
+[![Build Status](https://api.travis-ci.org/andrasq/node-micro-request.svg?branch=master)](https://travis-ci.org/andrasq/node-micro-request?branch=master)
+[![Coverage Status](https://codecov.io/github/andrasq/node-micro-request/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-micro-request?branch=master)
+
 
 Very thin convenience wrapper around http `request` to make it usable more like
 [`request`](https://npmjs.com/package/request) but without the size or speed overhead.

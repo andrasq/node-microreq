@@ -5,7 +5,7 @@
   "main": "index.js",
   "author": "Andras",
   "license": "Apache-2.0",
-  "repository": "https://gitnub.com/andrasq/node-micro-request",
+  "repository": "https://gitnub.com/andrasq/node-micro-request#readme",
   "keywords": [ "http", "request", "small", "quick", "minimal", "thin", "light" ],
   "dependencies": {
   },
