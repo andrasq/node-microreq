@@ -4,9 +4,9 @@ micro-request
 [![Coverage Status](https://codecov.io/github/andrasq/node-micro-request/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-micro-request?branch=master)
 
 
-Very thin convenience wrapper around http `request` to make it usable more like
-[`request`](https://npmjs.com/package/request) but without the size or speed overhead.
-No frills, just convenience.
+Very thin convenience wrapper around `http.request` to make it usable more like
+[`request`](https://npmjs.com/package/request) but without the size, speed or cpu
+overhead.  No frills, just convenience.
 
     var request = require('micro-request');
 
@@ -49,21 +49,18 @@ Options:
     noResListen: return as soon as the response header arrives, let the caller listen
         for `res.on('data')` and `res.on('end')`.
 
-The above options control the behavior of `micro-request`; All other options are send
+The above options control the behavior of `micro-request`; all other options are sent
 on to `http`.
 
 
 Todo
 ----
 
-- option to not send the body, but let the caller write data to the returned `req`
-- option to not wait for the response, but let the caller gather or pipe `res`
-
 
 Related Work
 ------------
 
-- `http`
-- `khttp`
-- `qhttp`
-- `request`
+- [`http`](https://nodejs.org/dist/latest/docs/api/http.html) - nodejs http
+- [`khttp`](https://github.com/andrasq/node-k-http) - fast mini request
+- [`qhttp`](https://npmjs.com/package/qhttp) - fast http convenience utils
+- [`request`](https://npmjs.com/package/request) - old featureful request
