@@ -23,7 +23,7 @@ function httpRequest( uri, body, callback ) {
         callback = body;
         body = undefined;
     }
-    body = (body != undefined) ? body : uri.body || '';
+    body = (body != undefined) ? body : (uri.body != undefined) ? uri.body : undefined;
     if (!uri || !callback) throw new Error("uri and callback required");
 
     var requestOptions = { headers: {} };
@@ -58,7 +58,7 @@ function httpRequest( uri, body, callback ) {
         callbackOnce(err);
     })
 
-    req.write(body);
+    if (body !== undefined) req.write(body);
     req.end();
 
     return req;
