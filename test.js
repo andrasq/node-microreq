@@ -3,60 +3,71 @@
 var http = require('http');
 var https = require('https');
 
+var unmockHttp = require('qnit').qmock.unmockHttp;
+
 var gm = {
     httpRequest: require('./')
 };
 
 module.exports = {
+    afterEach: function(done) {
+        unmockHttp();
+        done();
+    },
+
     'httpRequest': {
         'should invoke http.request': function(t) {
-            var spy = mockHttpRequest(http, t, 0);
-            gm.httpRequest('http://localhost', function(){});
-            setImmediate(function() {
+            t.mockHttp().when(/^/).send(200);
+            var spy = t.spyOnce(http, 'request');
+            gm.httpRequest('http://localhost1', function(){
                 t.equal(spy.callCount, 1);
+                t.contains(spy.callArguments[0], {
+                    hostname: 'localhost1',
+                })
                 t.done();
+            })
+            setImmediate(function() {
             })
         },
 
         'should invoke https.request': function(t) {
-            var spy = mockHttpRequest(https, t);
-            gm.httpRequest('https://localhost', function(){});
-            setImmediate(function() {
+            t.mockHttp().when(/^/).send(200);
+            var spy = t.spyOnce(https, 'request');
+            gm.httpRequest('https://localhost2', function(){
                 t.equal(spy.callCount, 1);
+                t.contains(spy.callArguments, {
+                    hostname: 'localhost2',
+                })
                 t.done();
             })
         },
 
         'should accept and parse string url': function(t) {
-            var spy = mockHttpRequest(http, t);
+            t.mockHttp().when(/^/).send(200);
+            var spy = t.spyOnce(http, 'request');
             gm.httpRequest('http://usern:passw@localhost:1337/path/name?a=12&b=34#hash5', function(err, res, body) {
                 t.equal(spy.callCount, 1);
                 t.contains(spy.callArguments[0], {
                     protocol: 'http:',
-                    auth: 'usern:passw',
                     hostname: 'localhost',
                     port: 1337,
                     path: '/path/name?a=12&b=34',
-                    query: 'a=12&b=34',
-                    hash: '#hash5'
                 });
                 t.done();
             });
         },
 
         'should accept object url': function(t) {
-            var spy = mockHttpRequest(http, t);
+            t.mockHttp().when(/^/).send(200);
+            var spy = t.spyOnce(http, 'request');
             var uri = { url: 'http://localhost:1337/path/name?a=12&b=34#hash5', auth: 'usern:passw', headers: { 'X-Unit-Test': '789A' } };
             gm.httpRequest(uri, function(err, res, body) {
                 t.equal(spy.callCount, 1);
                 t.contains(spy.callArguments[0], {
                     protocol: 'http:',
-                    auth: 'usern:passw',
                     hostname: 'localhost',
                     port: 1337,
                     path: '/path/name?a=12&b=34',
-                    query: 'a=12&b=34',
-                    hash: '#hash5',
                 });
                 t.contains(spy.callArguments[0].headers, { 'X-Unit-Test': '789A' });
                 t.done();
@@ -64,7 +75,8 @@ module.exports = {
         },
 
         'should not set uri properties to undefined parsed properties': function(t) {
-            var spy = mockHttpRequest(http, t);
+            t.mockHttp().when(/^/).send(200);
+            var spy = t.spyOnce(https, 'request');
             var uri = { url: "https://otherhost:1337" };
             gm.httpRequest(uri, function(err, res, body) {
                 t.equal(spy.callCount, 1);
@@ -79,42 +91,53 @@ module.exports = {
             });
         },
 
-        'should not overwrite uri properties with parsed properties': function(t) {
-            var spy = mockHttpRequest(http, t);
-            var uri = { protocol: 'https:', hostname: 'otherhost', url: 'http://localhost:1337' };
+        'should call with the parsed url properties': function(t) {
+            var reqOptions;
+            t.mockHttp()
+                .when(/^/)
+                    .compute(function(req, res, next) {
+                        reqOptions = req._options;
+                        next();
+                    })
+            ;
+            var uri = { method: 'POST', protocol: 'http:', hostname: 'somehost', query: 'b=2', hash: 'somehash', other: 'other' };
+            uri.url = 'https://otherhost:1337/path/name?a=1#otherhash';
             gm.httpRequest(uri, function(err, res, body) {
-                t.equal(spy.callCount, 1);
-                t.contains(spy.callArguments[0], {
+                t.contains(reqOptions, {
+                    method: 'POST',
+                    other: 'other',
                     protocol: 'https:',
-                    hostname: 'otherhost'
-                });
-                t.ok(! ('url' in spy.callArguments[0]));
+                    hostname: 'otherhost',
+                    port: 1337,
+                    path: '/path/name?a=1',
+                })
                 t.done();
-            });
+            })
         },
 
         'should accept string body': function(t) {
-            var spy = mockHttpRequest(http, t);
-            gm.httpRequest('http://localhost', 'test req body', function(err, res, body) {
-                t.equal(spy._mockReq.written[0], 'test req body');
+            t.mockHttp().when('http://somehost').send(200);
+            var req = gm.httpRequest('http://localhost', 'test req body', function(err, res, body) {
+                t.equal(typeof req._mockWrites[0][0], 'string');
+                t.equal(req._mockWrites[0][0], 'test req body');
                 t.done();
             })
         },
 
         'should accept buffer body': function(t) {
-            var spy = mockHttpRequest(http, t);
-            gm.httpRequest('http://localhost', new Buffer('test req body'), function(err, res, body) {
-                t.ok(Buffer.isBuffer(spy._mockReq.written[0]));
-                t.equal(spy._mockReq.written[0], 'test req body');
+            t.mockHttp().when('http://somehost').send(200);
+            var req = gm.httpRequest('http://somehost', new Buffer('test req body'), function(err, res, body) {
+                t.ok(Buffer.isBuffer(req._mockWrites[0][0]));
+                t.equal(String(req._mockWrites[0][0]), 'test req body');
                 t.done();
             })
         },
 
         'should accept object body': function(t) {
-            var spy = mockHttpRequest(http, t);
-            gm.httpRequest('http://localhost', { testBody: 'test req body' }, function(err, res, body) {
-                t.equal(typeof spy._mockReq.written[0], 'string');
-                t.equal(spy._mockReq.written[0], JSON.stringify({ testBody: 'test req body' }));
+            t.mockHttp().when('http://somehost').send(200);
+            var req = gm.httpRequest('http://somehost', { testBody: 'test req body' }, function(err, res, body) {
+                t.equal(typeof req._mockWrites[0][0], 'string');
+                t.equal(req._mockWrites[0][0], JSON.stringify({ testBody: 'test req body'}));
                 t.done();
             })
         },
@@ -129,13 +152,16 @@ module.exports = {
         },
 
         'should return gathered response raw': function(t) {
-            var spy = mockHttpRequest(http, t, 0);
-            setImmediate(function() {
-                spy._mockRes.emit('data', new Buffer('test '));
-                spy._mockRes.emit('data', new Buffer('response'));
-                spy._mockRes.emit('end');
-            })
+            t.mockHttp()
+                .when('http://some/url')
+                    .compute(function(req, res, next) {
+                        res.emit('data', new Buffer('test '));
+                        res.emit('data', new Buffer('response'));
+                        res.emit('end');
+                    })
+            ;
             gm.httpRequest('http://some/url', function(err, res, body) {
+                t.ifError(err);
                 t.ok(Buffer.isBuffer(body));
                 t.equal(body.toString(), 'test response');
                 t.done();
@@ -143,20 +169,21 @@ module.exports = {
         },
 
         'should return only once': function(t) {
-            var spy = mockHttpRequest(http, t, 0);
-            setImmediate(function() {
-                spy._mockReq.emit('error', new Error('request error'));
-                spy._mockRes.emit('error', new Error('response error'));
-                spy._mockRes.emit('end');
-            })
+            t.mockHttp()
+                .when('http://host/path')
+                    .send(200, 'test response')
+            ;
             var returnCount = 0;
-            gm.httpRequest('http://some/url', function(err, res, body) {
+            var req = gm.httpRequest('http://host/path', function(err, res, body) {
                 returnCount += 1;
+                t.ok(!err);
                 t.equal(returnCount, 1);
-                t.ok(err);
-                t.equal(err.message, 'request error');
+                if (res) res.emit('error', new Error('not sure if res emits error'));
+                if (res) res.emit('end');
                 setTimeout(function(){ t.done() }, 10);
             })
+            setTimeout(function(){ req.emit('error', new Error('test error')) }, 2);
+            setTimeout(function(){ req.emit('error', new Error('test error')) }, 3);
         },
 
         'errors': {
@@ -177,49 +204,29 @@ module.exports = {
             },
 
             'should return req errors': function(t) {
-                var spy = mockHttpRequest(http, t, 0);
-                setTimeout(function() {
-                    spy._mockReq.emit('error', new Error('test error'));
-                }, 5)
-                gm.httpRequest('http://some/url', function(err, res, body) {
+                t.mockHttp()
+                    .when('http://host/path')
+                        .send(200, 'test response')
+                ;
+                var req = gm.httpRequest('http://host/path', function(err, res, body) {
                     t.ok(err);
-                    t.equal(err.message, 'test error');
+                    t.equal(err.message, 'req error');
+                    t.done();
+                })
+                req.emit('error', new Error('req error'));
+            },
+
+            'should return res errors': function(t) {
+                t.mockHttp()
+                    .when('http://host/path')
+                    .emit('error', new Error('res error'))
+                ;
+                gm.httpRequest('http://host/path', function(err, res, body) {
+                    t.ok(err);
+                    t.equal(err.message, 'res error');
                     t.done();
                 })
             },
         },
     },
 };
-
-
-var events = require('events');
-var util = require('util');
-
-function MockReq( ) {
-    events.EventEmitter.call(this);
-    this.written = [];
-    var self = this;
-    this.write = function(chunk) { self.written.push(chunk) };
-    this.end = function() {};
-}
-util.inherits(MockReq, events.EventEmitter);
-
-function MockRes( ) {
-    events.EventEmitter.call(this);
-}
-util.inherits(MockRes, events.EventEmitter);
-
-// mock the next http.request to send a response ms milliseconds from now
-function mockHttpRequest( http_https, t, ms ) {
-    var mockReq = new MockReq();
-    var mockRes = new MockRes();
-
-    var spy = t.stubOnce(http_https, 'request', function(uri, cb) { cb(mockRes); return mockReq });
-
-    if (ms === undefined) setImmediate(function(){ mockRes.emit('end') });
-    else if (ms > 0) setTimeout(function(){ mockRes.emit('end') }, ms);
-
-    spy._mockReq = mockReq;
-    spy._mockRes = mockRes;
-    return spy;
-}

@@ -4,13 +4,7 @@ var http = require('http');
 var https = require('https');
 var Url = require('url');
 
-
 module.exports = httpRequest;
-
-
-// url properties to send along from the uri to http
-// we need at least { protocol:1, auth:1, hostname:1, port:1, query:1, path:1, hash:1, href:1 }
-var urlProperties = Url.parse("");
 
 /*
  * make an http request, return the response
@@ -33,8 +27,9 @@ function httpRequest( uri, body, callback ) {
     }
 
     var urlParts, url = (typeof uri === 'string') ? uri : uri.url;
-    if (url) for (var k in (urlParts = Url.parse(url))) {
-        if (urlParts[k] != null && requestOptions[k] == undefined) requestOptions[k] = urlParts[k];
+    // TODO: copy pathmame too for older qnit mockHttp(); nodejs ignores it
+    if (url != undefined) for (var k in (urlParts = Url.parse(url), { protocol:1, hostname:1, port:1, path:1, pathname:1 })) {
+        if (urlParts[k] != null) requestOptions[k] = urlParts[k];
     }
 
     body = (typeof body === 'string' || Buffer.isBuffer(body)) ? body : JSON.stringify(body);
@@ -51,7 +46,7 @@ function httpRequest( uri, body, callback ) {
             callbackOnce(null, res, Buffer.concat(chunks));
         })
         res.on('error', function(err) {
-            callbackOnce(err);
+            callbackOnce(err, res);
         })
     })
     req.on('error', function(err) {
