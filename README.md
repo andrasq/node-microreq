@@ -1,14 +1,14 @@
-micro-request
-=============
-[![Build Status](https://api.travis-ci.org/andrasq/node-micro-request.svg?branch=master)](https://travis-ci.org/andrasq/node-micro-request?branch=master)
-[![Coverage Status](https://codecov.io/github/andrasq/node-micro-request/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-micro-request?branch=master)
+microreq
+========
+[![Build Status](https://api.travis-ci.org/andrasq/node-microreq.svg?branch=master)](https://travis-ci.org/andrasq/node-microreq?branch=master)
+[![Coverage Status](https://codecov.io/github/andrasq/node-microreq/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-microreq?branch=master)
 
 
-Very thin convenience wrapper around `http.request` to make it usable more like
+Extremely thin convenience wrapper around `http.request` to make it usable more like
 [`request`](https://npmjs.com/package/request) but without the size, speed or cpu
 overhead.  No frills, just convenience.
 
-    var request = require('micro-request');
+    var request = require('microreq');
 
     var req = request("https://github.com/andrasq", function(err, res, body) {
         // err is any socket error
@@ -49,7 +49,7 @@ Options:
     noResListen: return as soon as the response header arrives, let the caller listen
         for `res.on('data')` and `res.on('end')`.
 
-The above options control the behavior of `micro-request`; all other options are sent
+The above options control the behavior of `microreq`; all other options are sent
 on to `http`.
 
 
