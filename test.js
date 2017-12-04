@@ -186,6 +186,47 @@ module.exports = {
             setTimeout(function(){ req.emit('error', new Error('test error')) }, 3);
         },
 
+        'should return without response if noResListen': function(t) {
+            t.mockHttp()
+                .when('http://some/url')
+                    .send(200, 'test response')
+            ;
+            t.expect(2);
+            var req = gm.httpRequest({
+                url: 'http://some/url',
+                noResListen: true,
+            }, function(err, res, body) {
+                t.strictEqual(body, undefined);
+                res.on('data', function(chunk) {
+                    t.equal(String(chunk), 'test response');
+                })
+                res.on('end', function() {
+                    t.done();
+                })
+            })
+        },
+
+        'alt should return without ending call if noReqEnd': function(t) {
+            t.mockHttp()
+                .when('http://host/path')
+                    .send(200, 'test response')
+            ;
+            var spy;
+            var req = gm.httpRequest({
+                url: 'http://host/path',
+                body: 'test data',
+                noReqEnd: true,
+            }, function(err, res, body) {
+                t.deepEqual(req._mockWrites, [['test data', undefined], ['more test data', 'utf8'], null]);
+                t.equal(String(body), 'test response');
+                t.equal(spy.callCount, 1);
+                t.done();
+            });
+            spy = t.spy(req, 'end');
+            req.write('more test data', 'utf8');
+            req.end();
+        },
+
         'errors': {
             'should require callback': function(t) {
                 try { gm.httpRequest("https://localhost") }

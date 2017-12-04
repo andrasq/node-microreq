@@ -1,6 +1,6 @@
 {
   "name": "micro-request",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "tiny convenience wrapper around http.request",
   "main": "index.js",
   "author": "Andras",

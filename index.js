@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2017 Kinvey, Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ *
+ * upload legacy stackdriver custom metrics to google stackriver
+ *
+ * 2017-12-04 - AR.
+ */
+
 'use strict';
 
 var http = require('http');
@@ -22,7 +42,7 @@ function httpRequest( uri, body, callback ) {
 
     var requestOptions = { headers: {} };
     if (typeof uri === 'object') {
-        for (var k in uri) if (k !== 'url' && k !== 'body' && k !== 'headers') requestOptions[k] = uri[k];
+        for (var k in uri) if (k !== 'url' && k !== 'body' && k !== 'headers' && k !== 'noReqEnd' && k !== 'noResListen') requestOptions[k] = uri[k];
         for (var k in uri.headers) requestOptions.headers[k] = uri.headers[k];
     }
 
@@ -33,11 +53,13 @@ function httpRequest( uri, body, callback ) {
     }
 
     body = (typeof body === 'string' || Buffer.isBuffer(body)) ? body : JSON.stringify(body);
-    requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body.length;
+    if (uri.noReqEnd) requestOptions.headers['Transfer-Encoding'] = 'chunked';
+    else requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body ? body.length : 0;
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
     var returned = 0, callbackOnce = function( err, res, body ) { if (!returned++) callback(err, res, body) };
     var req = httpCaller.request(requestOptions, function(res) {
+        if (uri.noResListen) return callbackOnce(null, res);
         var chunks = [];
         res.on('data', function(chunk) {
             chunks.push(chunk);
@@ -54,7 +76,7 @@ function httpRequest( uri, body, callback ) {
     })
 
     if (body !== undefined) req.write(body);
-    req.end();
+    if (!uri.noReqEnd) req.end();
 
     return req;
 }
