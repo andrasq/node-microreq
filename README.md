@@ -37,13 +37,14 @@ and the gathered body once the response has been received.
 
 Options:
 
-- url - web address string to call to.  If provided, it must not be blank.  To make a call
-  to the all-defaults webpage `GET http://localhost:80/`, use the empty uri `{}`.
-- body - body to send, if any.
-- noReqEnd - do not call `req.end()` after writing the body, let the caller append more data.
-  This also sends a "Transfer-Encoding: chunked" request header.
-- noResListen - return as soon as the response header arrives, let the caller listen for
-  `res.on('data')` and `res.on('end')
+    `url` - web address string to call to.  If provided, it must not be blank.  To
+        make a call to the all-defaults webpage `GET http://localhost:80/`, use the
+        empty uri `{}`.
+    `body` - body to send, if any.
+    `noReqEnd` - do not call `req.end()` after writing the body, let the caller append
+         more data.  This also sends a "Transfer-Encoding: chunked" request header.
+    `noResListen` - return as soon as the response header arrives, let the caller listen
+        for `res.on('data')` and `res.on('end')`.
 
 The above options control the behavior of `micro-request`; All other options are send
 on to `http`.
