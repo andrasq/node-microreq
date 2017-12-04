@@ -7,6 +7,9 @@
   "license": "Apache-2.0",
   "repository": "https://gitnub.com/andrasq/node-micro-request#readme",
   "keywords": [ "http", "request", "small", "quick", "minimal", "thin", "light" ],
+  "engies": {
+    "node": ">= 0.11"
+  },
   "dependencies": {
   },
   "devDependencies": {
