@@ -3,6 +3,15 @@ micro-request
 
 Very thin convenience wrapper around http `request` to make it usable more like
 [`request`](https://npmjs.com/package/request) but without the size or speed overhead.
+No frills, just convenience.
+
+    var request = require('micro-request');
+
+    var req = request("https://github.com/andrasq", function(err, res, body) {
+        // err is any socket error
+        // res is the http response object
+        // body is a buffer
+    })
 
 
 Api

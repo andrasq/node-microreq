@@ -24,7 +24,12 @@ var http = require('http');
 var https = require('https');
 var Url = require('url');
 
-module.exports = httpRequest;
+function request( uri, body, callback ) {
+    return request.request(uri, body, callback);
+};
+request.request = httpRequest;
+
+module.exports = request;
 
 /*
  * make an http request, return the response
