@@ -1,6 +1,6 @@
 {
   "name": "microreq",
-  "version": "0.9.1-dev",
+  "version": "0.10.0",
   "description": "tiny convenience wrapper around http.request",
   "main": "index.js",
   "author": "Andras",

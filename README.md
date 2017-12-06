@@ -49,6 +49,12 @@ Options that control the behavior of `microreq` (all other options are passed to
     for the `res` `'data'` and `'end'` events
 
 
+Change Log
+----------
+
+- 0.10.0 - `encoding` option
+- 0.9.0 - first release
+
 Todo
 ----
 
