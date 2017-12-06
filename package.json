@@ -1,11 +1,11 @@
 {
   "name": "microreq",
-  "version": "0.9.0",
+  "version": "0.9.1-dev",
   "description": "tiny convenience wrapper around http.request",
   "main": "index.js",
   "author": "Andras",
   "license": "Apache-2.0",
-  "repository": "https://gitnub.com/andrasq/node-microreq#readme",
+  "repository": "https://github.com/andrasq/node-microreq#readme",
   "keywords": [ "http", "request", "small", "quick", "minimal", "thin", "light" ],
   "engies": {
     "node": ">= 0.11"

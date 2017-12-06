@@ -24,33 +24,29 @@ Api
 
 Make an http or https request to the given url.
 
-`uri` can be a string url for a GET request, or an options object with settings for
-`http[s].request`.  If a string, it must not be `""` empty.  Settings in the uri
-object override url properties parsed from `uri.url`.
+`uri` can be a url string for a GET request, or an options object with settings for
+`http/https.request`.  If a string, it must not be `''` empty.  If an object, it can
+have a property `url` with the url string to call.  Properties read from the url string
+(`protocol`, `host`, `path`, and possibly `port`) override properties in `uri`.
+To specify the all-defaults webpage "GET http://localhost:80/", use the empty uri `{}`.
 
-`body` is optional, if provided it will be sent in the request body.  Strings and Buffers
-are sent as-is, all else is JSON encoded first.
+`body` is optional, if provided it will be sent in the request as the payload.  If not
+provided, `req.write()` will not be called.  Strings and Buffers are sent as-is, all
+else is JSON encoded first.
 
-`request` returns the `req` request object, and calls the callback on error, or with res
-and the gathered body once the response has been received.
+`request` returns the `req` request object, and calls the callback.  `callback` will
+receive any emitted error, the response object, and the gathered response body in a
+Buffer.  The exact behavior can be tuned with the `noResListen` and `noReqEnd` options.
 
+Options that control the behavior of `microreq` (all other options are passed to `http`):
 
-Options:
-
-    url: web address string to call to.  If provided, it must not be blank.  To
-        make a call to the all-defaults webpage `GET http://localhost:80/`, use the
-        empty uri `{}`.
-
-    body: body to send, if any.
-
-    noReqEnd: do not call `req.end()` after writing the body, let the caller append
-         more data.  This also sends a "Transfer-Encoding: chunked" request header.
-
-    noResListen: return as soon as the response header arrives, let the caller listen
-        for `res.on('data')` and `res.on('end')`.
-
-The above options control the behavior of `microreq`; all other options are sent
-on to `http`.
+- `url` - web address string to call to.  If provided, it must not be the empty string `''`.
+- `body` - body to send, if any.  A body passed as a function argument takes precedence.
+- `noReqEnd` - do not call `req.end()` after writing the body, let the caller append
+     more data.  This also sends a `Transfer-Encoding: chunked` request header.
+     The caller is reponsible for calling `req.end` to launch the call.
+- `noResListen` - return as soon as the response header arrives, let the caller listen
+    for the `res` `'data'` and `'end'` events
 
 
 Todo
