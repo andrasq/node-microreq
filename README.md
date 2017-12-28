@@ -42,6 +42,9 @@ Options that control the behavior of `microreq` (all other options are passed to
 
 - `url` - web address string to call to.  If provided, it must not be the empty string `''`.
 - `body` - body to send, if any.  A body passed as a function argument takes precedence.
+- `encoding` - if set, convert the response to a string of this encoding.  The default is
+     to return the raw data in buffers.  Only the final `body` is decoded, not the
+     `on data` callbacks.
 - `noReqEnd` - do not call `req.end()` after writing the body, let the caller append
      more data.  This also sends a `Transfer-Encoding: chunked` request header.
      The caller is reponsible for calling `req.end` to launch the call.
