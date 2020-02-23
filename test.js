@@ -13,6 +13,9 @@ var https = require('https');
 var qmock = require('qnit').qmock;
 var request = require('./');
 
+var fromBuf = eval('parseInt(process.versions.node) >= 6 ? Buffer.from : Buffer');
+
+
 module.exports = {
     afterEach: function(done) {
         qmock.unmockHttp();
@@ -154,7 +157,7 @@ module.exports = {
 
         'should accept buffer body': function(t) {
             t.mockHttp().when('http://somehost').send(200);
-            var req = request('http://somehost', new Buffer('test req body'), function(err, res, body) {
+            var req = request('http://somehost', fromBuf('test req body'), function(err, res, body) {
                 t.ok(Buffer.isBuffer(req._mockWrites[0][0]));
                 t.equal(String(req._mockWrites[0][0]), 'test req body');
                 t.done();
@@ -183,9 +186,9 @@ module.exports = {
             t.mockHttp()
                 .when('http://some/url')
                     .compute(function(req, res, next) {
-                        res.emit('data', new Buffer('test '));
-                        res.emit('data', new Buffer('resp'));
-                        res.emit('data', new Buffer('onse'));
+                        res.emit('data', fromBuf('test '));
+                        res.emit('data', fromBuf('resp'));
+                        res.emit('data', fromBuf('onse'));
                         res.emit('end');
                     })
             ;
@@ -211,6 +214,75 @@ module.exports = {
                 t.ifError(err);
                 t.equal(typeof body, 'string');
                 t.equal(body, 'test response');
+                t.done();
+            })
+        },
+
+        'should return decoded response': function(t) {
+            t.mockHttp()
+                .when('http://some/url')
+                    .compute(function(req, res, next) {
+                        res.emit('data', 'test ');
+                        res.emit('data', 'resp');
+                        res.emit('data', 'onse');
+                        res.emit('end');
+                    })
+            ;
+            request({ url: 'http://some/url', encoding: 'utf8' }, function(err, res, body) {
+                t.ifError(err);
+                t.equal(typeof body, 'string');
+                t.equal(body, 'test response');
+                t.done();
+            })
+        },
+
+        'should return decoded response even without res.setEncoding': function(t) {
+            t.mockHttp()
+                .when('http://some/url')
+                    .compute(function(req, res, next) {
+                        res.emit('data', fromBuf('test '));
+                        res.emit('data', fromBuf('resp'));
+                        res.emit('data', fromBuf('onse'));
+                        res.emit('end');
+                    })
+            ;
+            request({ url: 'http://some/url', encoding: 'utf8' }, function(err, res, body) {
+                t.ifError(err);
+                t.equal(typeof body, 'string');
+                t.equal(body, 'test response');
+                t.done();
+            })
+        },
+
+        'should return decoded json response as object': function(t) {
+            var goodJson = '{"a":123}'
+            t.mockHttp()
+                .when('http://some/url')
+                    .compute(function(req, res, next) {
+                        res.emit('data', goodJson);
+                        res.emit('end');
+                    })
+            ;
+            request({ url: 'http://some/url', encoding: 'json' }, function(err, res, body) {
+                t.ifError(err);
+                t.deepEqual(body, JSON.parse(goodJson));
+                t.done();
+            })
+        },
+
+        'should return bad json response as utf8 string': function(t) {
+            var badJson = '{"a"123}'
+            t.mockHttp()
+                .when('http://some/url')
+                    .compute(function(req, res, next) {
+                        res.emit('data', badJson);
+                        res.emit('end');
+                    })
+            ;
+            request({ url: 'http://some/url', encoding: 'json' }, function(err, res, body) {
+                t.ifError(err);
+                t.equal(typeof body, 'string');
+                t.equal(String(body), badJson);
                 t.done();
             })
         },

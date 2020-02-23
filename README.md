@@ -46,7 +46,10 @@ Options that control the behavior of `microreq` (all other options are passed to
      The caller is reponsible for calling `req.end` to launch the call.
 - `noResListen` - return as soon as the response header arrives, let the caller listen
     for the `res` `'data'` and `'end'` events
-
+- `encoding` - if set, how to decode the response.  The default is to return the raw
+    bytes received in a Buffer.  The usual toString() encodings can be specified, and
+    also `'json'` to JSON.parse the response and return the decoded object on success,
+    or the utf8 response string on failure.
 
 Todo
 ----
