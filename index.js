@@ -11,12 +11,8 @@ var http = require('http');
 var https = require('https');
 var Url = require('url');
 
-module.exports = request;
-
-function request( uri, body, callback ) {
-    return request.request(uri, body, callback);
-};
-request.request = httpRequest;
+module.exports = function request(uri, body, cb) { return request.request(uri, body, cb) };
+module.exports.request = microreq;
 
 var microreqOptions = {url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1};
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
@@ -27,7 +23,7 @@ function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return s
  * Uri can be a url string or the options to pass to http.request, with a few extra
  * recognized settings eg 'url', 'body', 'encoding' (that are not passed).
  */
-function httpRequest( uri, body, callback ) {
+function microreq( uri, body, callback ) {
     if (!callback) {
         callback = body;
         body = undefined;
