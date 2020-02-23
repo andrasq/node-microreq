@@ -50,22 +50,28 @@ function httpRequest( uri, body, callback ) {
     else requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body ? body.length : 0;
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
-    var returned = 0, callbackOnce = function( err, res, body ) { if (!returned++) callback(err, res, body) };
+    var doneCount = 0, body;
     var req = httpCaller.request(requestOptions, function(res) {
-        if (noResListen) return callbackOnce(null, res);
-        var chunks = [];
+        if (noResListen) return (!doneCount++ && callback(null, res));
+        // readBody from qibl 1.5.0-pre
+        var chunk1, chunks, data = '', body;
         res.on('data', function(chunk) {
-            chunks.push(chunk);
+            if (typeof chunk === 'string') data += chunk;
+            else if (!chunk1) chunk1 = chunk;
+            else if (!chunks) chunks = new Array(chunk1, chunk);
+            else chunks.push(chunk);
         })
         res.on('end', function() {
-            callbackOnce(null, res, Buffer.concat(chunks));
+            var body = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
+            // TODO: if (encoding === 'json') body = tryJsonParse(body);
+            if (!doneCount++) callback(null, res, body);
         })
         res.on('error', function(err) {
-            callbackOnce(err, res);
+            if (!doneCount++) callback(err);
         })
     })
     req.on('error', function(err) {
-        callbackOnce(err);
+        if (!doneCount++) callback(err);
     })
 
     if (body !== undefined) req.write(body);

@@ -184,7 +184,8 @@ module.exports = {
                 .when('http://some/url')
                     .compute(function(req, res, next) {
                         res.emit('data', new Buffer('test '));
-                        res.emit('data', new Buffer('response'));
+                        res.emit('data', new Buffer('resp'));
+                        res.emit('data', new Buffer('onse'));
                         res.emit('end');
                     })
             ;
@@ -192,6 +193,24 @@ module.exports = {
                 t.ifError(err);
                 t.ok(Buffer.isBuffer(body));
                 t.equal(body.toString(), 'test response');
+                t.done();
+            })
+        },
+
+        'should return string response': function(t) {
+            t.mockHttp()
+                .when('http://some/url')
+                    .compute(function(req, res, next) {
+                        res.emit('data', 'test ');
+                        res.emit('data', 'res');
+                        res.emit('data', 'ponse');
+                        res.emit('end');
+                    })
+            ;
+            request('http://some/url', function(err, res, body) {
+                t.ifError(err);
+                t.equal(typeof body, 'string');
+                t.equal(body, 'test response');
                 t.done();
             })
         },
