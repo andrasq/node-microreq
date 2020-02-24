@@ -47,8 +47,9 @@ function microreq( uri, body, callback ) {
     if (noReqEnd) requestOptions.headers['Transfer-Encoding'] = 'chunked';
     else requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body ? body.length : 0;
 
-    var httpCaller = requestOptions.protocol === 'https:' ? https : http;
     var doneCount = 0, body;
+
+    var httpCaller = requestOptions.protocol === 'https:' ? https : http;
     var req = httpCaller.request(requestOptions, function(res) {
         if (noResListen) return (!doneCount++ && callback(null, res));
         // readBody from qibl 1.5.0-pre
