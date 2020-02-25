@@ -10,13 +10,42 @@
 var http = require('http');
 var https = require('https');
 
-var qmock = require('qnit').qmock;
+var qmock = require('qmock');
 var request = require('./');
 
+// fromBuf adapted from qibl
 var fromBuf = eval('parseInt(process.versions.node) >= 6 ? Buffer.from : Buffer');
 
+var echoServer = http.createServer(function(req, res) {
+    req.resume();
+    req.on('end', function() {
+        switch (req.url) {
+        case '/utf8':
+            res.write('utf8 ');
+            res.end('response');
+            break;
+        case '/slowres':
+            res.write('ok');
+            setTimeout(function() { res.end() }, 200);
+            break;
+        default:
+            res.statusCode = 404;
+            res.end();
+        }
+    })
+})
 
 module.exports = {
+    before: function(done) {
+        echoServer.on('listening', done);
+        echoServer.listen(1337);
+    },
+
+    after: function(done) {
+        echoServer.close();
+        done();
+    },
+
     afterEach: function(done) {
         qmock.unmockHttp();
         done();
@@ -236,6 +265,17 @@ module.exports = {
             })
         },
 
+        'should return decoded response via req': function(t) {
+            // note: this test hits an actual http server to use an actual res.setEncoding
+            qmock.unmockHttp();
+            request({ url: 'http://localhost:1337/utf8', encoding: 'utf8' }, function(err, res, body) {
+                t.ifError(err);
+                t.equal(typeof body, 'string');
+                t.equal(body, 'utf8 response');
+                t.done();
+            })
+        },
+
         'should return decoded response even without res.setEncoding': function(t) {
             t.mockHttp()
                 .when('http://some/url')
@@ -384,6 +424,33 @@ module.exports = {
                 request('http://host/path', function(err, res, body) {
                     t.ok(err);
                     t.equal(err.message, 'res error');
+                    t.done();
+                })
+            },
+
+            'should time out on slow connect': function(t) {
+                var t1 = Date.now();
+                // hit an ip address that will not exist in the test environment
+                var req = request({ url: 'http://10.0.0.0/', timeout: 20 }, function(err, res, body) {
+                    t.ok(err);
+                    t.equal(err.code, 'ETIMEDOUT');
+                    t.ok(Date.now() - t1 < 30);
+                    t.done();
+                })
+            },
+
+            'should time out on slow response': function(t) {
+                qmock.mockHttp()
+                    .when('http://somehost/slowres')
+                        .write('')
+                        .delay(100)
+                        .end('ok')
+                ;
+                var t1 = Date.now();
+                var req = request({ url: 'http://somehost/slowres', timeout: 30 }, function(err, res, body) {
+                    t.ok(err);
+                    t.equal(err.code, 'ESOCKETTIMEDOUT');
+                    t.ok(Date.now() - t1 < 40);
                     t.done();
                 })
             },
