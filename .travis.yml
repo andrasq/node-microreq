@@ -1,11 +1,12 @@
 language: node_js
 node_js:
-# might need a newer qmock:
-#  - 0.10
+  # 0.10 might need a newer qmock:
+  # - 0.10
   - 6
   - 8
   - 10
   - 12
+  - 14
 after_success:
   - npm install -g nyc@8.4.0 coveralls
   - nyc --reporter text --reporter lcov npm run test
