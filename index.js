@@ -53,7 +53,7 @@ function microreq( uri, body, callback ) {
         doCallback(err ? makeError(err.code || 'ERES', err) : !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout'));
     }
     var timer = uri.timeout >= 0 && setTimeout(onError, uri.timeout);
-    function doCallback(err, res, body) { clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
+    function doCallback(err, res, body) { timer && clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
     req = httpCaller.request(requestOptions, function(res) {
