@@ -55,7 +55,8 @@ Options that control the behavior of `microreq` (all other options are passed to
 Change Log
 ----------
 
-- **0.10.0** - `encoding` option supporting json, `timeout` option, faster body decoding
+- **0.11.0** - `timeout` option, depend on qmock
+- **0.10.0** - `encoding` option supporting json, faster body decoding, guard against multiple callbacks
 
 
 Todo
