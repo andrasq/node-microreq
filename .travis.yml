@@ -10,6 +10,7 @@ node_js:
   - 12
   - 14
 after_success:
+  - if [ `node -p 'process.version.slice(0, 3)'` != "v8." ]; then exit; fi
   - npm install -g nyc@8.4.0 coveralls
   - nyc --reporter text --reporter lcov npm run test
   - nyc report -r text-lcov | coveralls
