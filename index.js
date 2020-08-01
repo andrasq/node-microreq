@@ -14,7 +14,7 @@ var Url = require('url');
 module.exports = function request(uri, body, cb) { return request.request(uri, body, cb) };
 module.exports.request = microreq;
 
-var microreqOptions = {url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1};
+var microreqOptions = {url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1};
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
 
 /*
@@ -22,6 +22,7 @@ function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return s
  * Very simple wrapper around http.request to make it more conveient to use.
  * Uri can be a url string or the options to pass to http.request, with a few extra
  * recognized settings eg 'url', 'body', 'encoding' (that are not passed).
+ * makeError and readBody adapted from qibl 1.5.0-pre
  */
 function microreq( uri, body, callback ) {
     if (!callback) {
@@ -47,12 +48,18 @@ function microreq( uri, body, callback ) {
     if (noReqEnd) requestOptions.headers['Transfer-Encoding'] = 'chunked';
     else requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body ? body.length : 0;
 
-    var doneCount = 0, body;
+    var req, doneCount = 0, body, connected = false, onError = function onError(err) {
+        if (!err) { !connected ? req.abort() : req.socket.destroy() }
+        doCallback(err ? makeError(err.code || 'ERES', err) : !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout'));
+    }
+    var timer = uri.timeout >= 0 && setTimeout(onError, uri.timeout);
+    function doCallback(err, res, body) { timer && clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
-    var req = httpCaller.request(requestOptions, function(res) {
+    req = httpCaller.request(requestOptions, function(res) {
+        connected = true;
+        if (encoding && encoding !== 'json' && res.setEncoding) res.setEncoding(encoding);
         if (noResListen) return (!doneCount++ && callback(null, res));
-        // readBody from qibl 1.5.0-pre
         var chunk1, chunks, data = '', body;
         res.on('data', function(chunk) {
             if (typeof chunk === 'string') data += chunk;
@@ -63,18 +70,19 @@ function microreq( uri, body, callback ) {
         res.on('end', function() {
             var body = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
             if (encoding) body = (encoding === 'json') ? tryJsonParse(body) : (typeof body !== 'string') ? body.toString(encoding) : body;
-            if (!doneCount++) callback(null, res, body);
+            doCallback(null, res, body);
         })
-        res.on('error', function(err) {
-            if (!doneCount++) callback(err);
-        })
+        res.on('error', onError);
     })
-    req.on('error', function(err) {
-        if (!doneCount++) callback(err);
-    })
+    req.on('error', onError);
 
     if (body !== undefined) req.write(body);
     if (!noReqEnd) req.end();
 
     return req;
+}
+
+function makeError( code, message, baseFunc ) {
+    var err = typeof message === 'object' ? message : (err = new Error(message), Error.captureStackTrace(err, baseFunc), err);
+    return (err.code = code, err);
 }
