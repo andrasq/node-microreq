@@ -50,7 +50,8 @@ function microreq( uri, body, callback ) {
 
     var req, doneCount = 0, body, connected = false, onError = function onError(err) {
         if (!err) { !connected ? req.abort() : req.socket.destroy() }
-        doCallback(err ? makeError(err.code || 'ERES', err) : !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout'));
+        if (!err) var timeoutErr =  !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout');
+        doCallback(timeoutErr || makeError(err.code || 'ERES', err));
     }
     var timer = uri.timeout >= 0 && setTimeout(onError, uri.timeout);
     function doCallback(err, res, body) { timer && clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
@@ -59,7 +60,7 @@ function microreq( uri, body, callback ) {
     req = httpCaller.request(requestOptions, function(res) {
         connected = true;
         if (encoding && encoding !== 'json' && res.setEncoding) res.setEncoding(encoding);
-        if (noResListen) return (!doneCount++ && callback(null, res));
+        if (noResListen) return (!doneCount++ && callback(null, res));  // direct callback to not cancel timeouts
         var chunk1, chunks, data = '', body;
         res.on('data', function(chunk) {
             if (typeof chunk === 'string') data += chunk;
