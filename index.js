@@ -78,8 +78,8 @@ function microreq( uri, body, callback ) {
     })
     req.on('error', onError);
 
-    if (body !== undefined) req.write(body);
-    if (!noReqEnd) req.end();
+    if (body !== undefined) noReqEnd ? req.write(body) : req.end(body)  // faster to just end than to write + end
+    else if (!noReqEnd) req.end();
 
     return req;
 }

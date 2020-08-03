@@ -454,6 +454,12 @@ module.exports = {
                     t.done();
                 })
             },
+
+            'should time out on a slow connect if noResListen': function(t) {
+            },
+
+            'should time out on a slow response if noResListen': function(t) {
+            },
         },
     },
 };
