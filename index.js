@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017 Kinvey, Inc.
+ * Copyright (C) 2017-2019 Kinvey, Inc., 2020 Andras Radics
  * Licensed under the Apache License, Version 2.0
  *
  * 2017-12-04 - AR.
