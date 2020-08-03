@@ -51,7 +51,8 @@ function microreq( uri, body, callback ) {
     var req, doneCount = 0, body, connected = false, onError = function onError(err) {
         if (!err) { !connected ? req.abort() : req.socket.destroy() }
         if (!err) var timeoutErr =  !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout');
-        doCallback(timeoutErr || makeError(err.code || 'ERES', err));
+        if (!err && noResListen) req.emit('error', timeoutErr); // if callback already called emit the error on req
+        else doCallback(timeoutErr || makeError(err.code || 'ERES', err));
     }
     var timer = uri.timeout >= 0 && setTimeout(onError, uri.timeout);
     function doCallback(err, res, body) { timer && clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
