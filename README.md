@@ -57,13 +57,14 @@ Options that control the behavior of `microreq` (all other options are passed to
 
 Build an request caller with the options wired in and a method `request` to make web
 requests and `defaults` to build callers with inherited configs.  Also provides convenience
-methods `get`, `put`, `post`, `head`, `patch` and `del` that specify the method
+methods `get`, `put`, `post`, `head`, `patch` and `del` that specify the method.
+All the call methods ultimately invoke `microreq.request`.
 
 #### caller.request( uri, [body,] callback )
 
 #### caller.get( uri, [body,] callback )
 
-Same as specifying `{method: 'GET'}` in the `uri` of `caller.request()`.
+Same as specifying `{method: 'GET'}` in the `uri` of `caller.request(uri)`.
 
 #### caller.defaults( options )
 
