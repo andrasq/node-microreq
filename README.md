@@ -50,11 +50,14 @@ Options that control the behavior of `microreq` (all other options are passed to
     received bytes in a Buffer.  The usual toString() encodings can be specified, and
     also `'json'` to JSON.parse the response and return the decoded object (or the
     utf8 response string if unable to parse).
+- `auth` - create an Authorization: Basic authentication header.  Default off.  Enable by
+    setting auth to an object `{username: <user>, password: <secret>}`.
 
 
 Change Log
 ----------
 
+- **0.12.0** - `followRedirects` option, `auth` option
 - **0.11.1** - emit timeout errors if noResListen, faster req launch
 - **0.11.0** - `timeout` option, depend on qmock
 - **0.10.0** - `encoding` option supporting json, faster body decoding, guard against multiple callbacks
