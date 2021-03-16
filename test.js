@@ -130,8 +130,57 @@ module.exports = {
                     path: '/path/name?a=12&b=34',
                 })
                 t.contains(spy.callArguments[0].headers, { 'X-Unit-Test': '789A' });
+                t.contains(spy.callArguments[0].headers.Authorization, 'Basic ' + fromBuf('usern:passw').toString('base64'));
                 t.done();
             })
+        },
+
+        'accepts auth': {
+            'string': function(t) {
+                var spy = t.spyOnce(http, 'request');
+                request({ url: 'http://host/path', auth: 'user1:pass1' }, function() {
+                    t.ok(spy.called);
+                    t.equal(spy.args[0][0].auth, 'user1:pass1');
+                    t.contains(spy.args[0][0].headers.Authorization, 'Basic ');
+                    t.done();
+                })
+            },
+            'object': function(t) {
+                var spy = t.spyOnce(http, 'request');
+                request({ url: 'http://host/path', auth: {username: 'user2', password: 'pass2'} }, function() {
+                    t.ok(spy.called);
+                    t.equal(spy.args[0][0].auth, 'user2:pass2');
+                    t.contains(spy.args[0][0].headers.Authorization, 'Basic ');
+                    t.done();
+                })
+            },
+            'short-names object': function(t) {
+                var spy = t.spyOnce(http, 'request');
+                request({ url: 'http://host/path', auth: {user: 'user3', pass: 'pass3'} }, function() {
+                    t.ok(spy.called);
+                    t.equal(spy.args[0][0].auth, 'user3:pass3');
+                    t.contains(spy.args[0][0].headers.Authorization, 'Basic ');
+                    t.done();
+                })
+            },
+            'url component': function(t) {
+                var spy = t.spyOnce(http, 'request');
+                request({ url: 'http://user4:pass4@host/path' }, function() {
+                    t.ok(spy.called);
+                    t.equal(spy.args[0][0].auth, 'user4:pass4');
+                    t.contains(spy.args[0][0].headers.Authorization, 'Basic ');
+                    t.done();
+                })
+            },
+            'uri.auth overrides uri.url component': function(t) {
+                var spy = t.spyOnce(http, 'request');
+                request({ url: 'http://user4:pass4@host/path', auth: 'user5:pass5' }, function() {
+                    t.ok(spy.called);
+                    t.equal(spy.args[0][0].auth, 'user5:pass5');
+                    t.contains(spy.args[0][0].headers.Authorization, 'Basic ');
+                    t.done();
+                })
+            },
         },
 
         'should not set uri properties to undefined parsed properties': function(t) {

@@ -31,20 +31,21 @@ function microreq( uri, body, callback ) {
     if (!callback) { callback = body; body = undefined }
     body = (body != undefined) ? body : (uri.body != undefined) ? uri.body : undefined;
     if (!uri || !callback) throw new Error("uri and callback required");
+    if (typeof uri !== 'object') uri = { url: String(uri) };
 
     var requestOptions = { headers: {} }, noReqEnd = uri.noReqEnd, noResListen = uri.noResListen, encoding = uri.encoding;
-    if (typeof uri === 'object') {
-        if (uri.auth) requestOptions.headers.Authorization = 'Basic ' +
-            fromBuf((uri.auth.username || uri.auth.user) + ':' + (uri.auth.password || uri.auth.pass)).toString('base64');
-        for (var k in uri) if (!(microreqOptions[k])) requestOptions[k] = uri[k];
-        for (var k in uri.headers) requestOptions.headers[k] = uri.headers[k];
-    }
+    for (var k in uri) if (!(microreqOptions[k])) requestOptions[k] = uri[k];
+    for (var k in uri.headers) requestOptions.headers[k] = uri.headers[k];
+    if (uri.auth) requestOptions.auth = (typeof uri.auth === 'string') ? uri.auth
+        : (uri.auth.username || uri.auth.user) + ':' + (uri.auth.password || uri.auth.pass);
 
-    var urlParts, url = (typeof uri === 'string') ? uri : uri.url;
-    // copy pathmame too for older qnit mockHttp(); nodejs ignores it
-    if (url != undefined) for (var k in (urlParts = Url.parse(url), { protocol:1, hostname:1, port:1, path:1, pathname:1 })) {
-        if (urlParts[k] != null) requestOptions[k] = urlParts[k];
+    if (uri.url != undefined) {
+        // copy pathmame too for older qnit mockHttp(); nodejs ignores it
+        var urlParts = Url.parse(uri.url), copyFields = { protocol:1, hostname:1, port:1, path:1, pathname:1 };
+        for (var k in copyFields) if (urlParts[k] != null) requestOptions[k] = urlParts[k];
+        if (requestOptions.auth === undefined) requestOptions.auth = urlParts.auth; // uri.auth overrides the url
     }
+    if (requestOptions.auth) requestOptions.headers['Authorization'] = 'Basic ' + fromBuf(requestOptions.auth).toString('base64');
 
     body = (typeof body === 'string' || Buffer.isBuffer(body)) ? body : JSON.stringify(body);
     if (noReqEnd) requestOptions.headers['Transfer-Encoding'] = 'chunked';

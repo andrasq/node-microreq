@@ -50,8 +50,9 @@ Options that control the behavior of `microreq` (all other options are passed to
     received bytes in a Buffer.  The usual toString() encodings can be specified, and
     also `'json'` to JSON.parse the response and return the decoded object (or the
     utf8 response string if unable to parse).
-- `auth` - create an Authorization: Basic authentication header.  Default off.  Enable by
-    setting auth to an object `{username: <user>, password: <secret>}`.
+- `auth` - http Basic auth credentials as either the colon-separated `username:password`
+    string, or an object `{username: <login>, password: <passwd>}`.  The credentials
+    are used to generate an `Authorization: Basic <base64>` header.  Default no auth.
 
 ### caller = request.defaults( options )
 
