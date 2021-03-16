@@ -53,6 +53,22 @@ Options that control the behavior of `microreq` (all other options are passed to
 - `auth` - create an Authorization: Basic authentication header.  Default off.  Enable by
     setting auth to an object `{username: <user>, password: <secret>}`.
 
+### caller = request.defaults( options )
+
+Build an request caller with the options wired in and a method `request` to make web
+requests and `defaults` to build callers with inherited configs.  Also provides convenience
+methods `get`, `put`, `post`, `head`, `patch` and `del` that specify the method
+
+#### caller.request( uri, [body,] callback )
+
+#### caller.get( uri, [body,] callback )
+
+Same as specifying `{method: 'GET'}` in the `uri` of `caller.request()`.
+
+#### caller.defaults( options )
+
+It is possible to build new callers that inherit defaults from their builder.
+
 
 Change Log
 ----------

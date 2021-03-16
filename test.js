@@ -493,13 +493,15 @@ module.exports = {
     'defaults': {
         'returns a request caller': function(t) {
             var caller = request.defaults();
+            t.equal(typeof caller.request, 'function');
+            t.equal(typeof caller.defaults, 'function');
             t.equal(typeof caller.get, 'function');
             t.equal(typeof caller.put, 'function');
             t.equal(typeof caller.post, 'function');
             t.equal(typeof caller.del, 'function');
             t.done();
         },
-        'methods invoke caller': function(t) {
+        'methods invoke request.request': function(t) {
             var caller = request.defaults();
             var methods = Object.keys(caller)
                 .filter(function(m) { return typeof caller[m] === 'function' && m !== 'call' && m !== 'defaults' });

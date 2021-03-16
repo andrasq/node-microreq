@@ -95,13 +95,14 @@ function defaults( options ) {
             var url = buildUrl(rtrim(uri.baseUrl || caller._opts.baseUrl || '', '/'), uri.url || caller._opts.url);
             return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method, url: url }), body, cb);
         },
+        request: function request(uri, body, cb) { return caller.call(uri.method, uri, body, cb) },
+        defaults: function(options) { return defaults(mergeOpts(caller._opts, options)) },
         get: function get(url, body, cb) { return caller.call('GET', url, body, cb) },
         head: function del(url, body, cb) { return caller.call('HEAD', url, body, cb) },
         post: function post(url, body, cb) { return caller.call('POST', url, body, cb) },
         put: function put(url, body, cb) { return caller.call('PUT', url, body, cb) },
         patch: function patch(url, body, cb) { return caller.call('PATCH', url, body, cb) },
         del: function del(url, body, cb) { return caller.call('DELETE', url, body, cb) },
-        defaults: function(options) { return defaults(mergeOpts(caller._opts, options)) },
     }
     caller.delete = caller.del;
     return caller;
