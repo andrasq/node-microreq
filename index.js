@@ -88,13 +88,11 @@ function microreq( uri, body, callback ) {
 
 function defaults( options ) {
     if (!options || typeof options === 'string') options = { url: options || '' };
-    var opts = mergeOpts({}, options);
-    if (opts.baseUrl) opts.baseUrl = rtrim(opts.baseUrl, '/');
     var caller = {
-        _opts: opts,
+        _opts: mergeOpts({}, options),
         call: function(method, uri, body, cb) {
-            if (!uri || typeof uri === 'string') uri = { url: uri || '' };
-            var url = buildUrl(rtrim(uri.baseUrl, '/') || caller._opts.baseUrl, uri.url);
+            if (!uri || typeof uri === 'string') uri = { url: '' + uri };
+            var url = buildUrl(rtrim(uri.baseUrl || caller._opts.baseUrl || '', '/'), uri.url || caller._opts.url);
             return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method, url: url }), body, cb);
         },
         get: function get(url, body, cb) { return caller.call('GET', url, body, cb) },

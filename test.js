@@ -526,12 +526,20 @@ module.exports = {
                 t.ok(spy.called);
                 t.contains(spy.args[0][0], {
                     method: 'FOO',              // retains method
-                    baseUrl: 'some-base-url',   // inherited option, and strips trailing '/' from baseUrl
                     someOption: 'TRUE-234',     // default option
                     otherOption: '567',         // user option
-                    url: 'some-base-url/some-path',     // built url
+                    url: 'some-base-url/some-path',     // built url using inherited option
                     headers: { Accept: 'foo/bar' },     // merged headers
                 });
+                t.done();
+            })
+        },
+        'caller uses default url': function(t) {
+            var caller = request.defaults({ url: '/url' }).defaults({ baseUrl: '/some' });
+            var spy = t.stubOnce(request, 'request').yields(null, {});
+            caller.call('GET', '', 'mock body', function(err, res, body) {
+                t.ok(spy.called);
+                t.contains(spy.args[0][0], { url: '/some/url' });
                 t.done();
             })
         },
