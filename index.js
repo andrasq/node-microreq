@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017-2019 Kinvey, Inc., 2020 Andras Radics
+ * Copyright (C) 2017-2019 Kinvey, Inc., 2020-2021 Andras Radics
  * Licensed under the Apache License, Version 2.0
  *
  * 2017-12-04 - AR.
@@ -14,8 +14,10 @@ var Url = require('url');
 module.exports = function request(uri, body, cb) { return request.request(uri, body, cb) };
 module.exports.request = microreq;
 
-var microreqOptions = {url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1};
+var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1,
+    };
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
+var fromBuf = eval('parseInt(process.versions.node) >= 7 ? Buffer.from : Buffer');
 
 /*
  * make an http request, return the response
@@ -25,15 +27,13 @@ function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return s
  * makeError and readBody adapted from qibl 1.5.0-pre
  */
 function microreq( uri, body, callback ) {
-    if (!callback) {
-        callback = body;
-        body = undefined;
-    }
     body = (body != undefined) ? body : (uri.body != undefined) ? uri.body : undefined;
     if (!uri || !callback) throw new Error("uri and callback required");
 
     var requestOptions = { headers: {} }, noReqEnd = uri.noReqEnd, noResListen = uri.noResListen, encoding = uri.encoding;
     if (typeof uri === 'object') {
+        if (uri.auth) requestOptions.headers.Authorization = 'Basic ' +
+            fromBuf((uri.auth.username || uri.auth.user) + ':' + (uri.auth.password || uri.auth.pass)).toString('base64');
         for (var k in uri) if (!(microreqOptions[k])) requestOptions[k] = uri[k];
         for (var k in uri.headers) requestOptions.headers[k] = uri.headers[k];
     }
@@ -58,7 +58,7 @@ function microreq( uri, body, callback ) {
     function doCallback(err, res, body) { timer && clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
-    req = httpCaller.request(requestOptions, function(res) {
+    req = httpCaller.request(requestOptions, function onConnect(res) {
         connected = true;
         if (encoding && encoding !== 'json' && res.setEncoding) res.setEncoding(encoding);
         if (noResListen) return (!doneCount++ && callback(null, res));  // direct callback to not cancel timeouts

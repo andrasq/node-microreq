@@ -75,7 +75,7 @@ module.exports = {
         t.done();
     },
 
-    'httpRequest': {
+    'microreq': {
         'should invoke http.request': function(t) {
             t.mockHttp().when(/^/).send(200);
             var spy = t.spyOnce(http, 'request');
