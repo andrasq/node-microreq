@@ -456,9 +456,23 @@ module.exports = {
             },
 
             'should time out on a slow connect if noResListen': function(t) {
+                var t1 = Date.now();
+                var req = request({ url: 'http://10.0.0.0/', timeout: 20, noResListen: true }, function(err, res) {
+                    t.ok(err);
+                    t.equal(err.code, 'ETIMEDOUT');
+                    t.ok(Date.now() - t1 < 30);
+                    t.done();
+                })
             },
 
             'should time out on a slow response if noResListen': function(t) {
+                var t1 = Date.now();
+                var req = request({ url: 'http://localhost:1337/slowres', timeout: 30, noResListen: true }, function() {});
+                req.on('error', function(err) {
+                    t.equal(err.code, 'ESOCKETTIMEDOUT');
+                    t.ok(Date.now() - t1 < 40);
+                    t.done();
+                })
             },
         },
     },
