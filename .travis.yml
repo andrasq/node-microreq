@@ -2,8 +2,8 @@ before_install:
   - npm install qnit
 language: node_js
 node_js:
-  # 0.10 might need a newer qmock:
-  # - 0.10
+  # 0.10 and 0.8 might need a newer qmock:
+  - 0.11
   - 6
   - 8
   - 10
