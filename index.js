@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017-2019 Kinvey, Inc., 2020 Andras Radics
+ * Copyright (C) 2017-2019 Kinvey, Inc., 2020-2021 Andras Radics
  * Licensed under the Apache License, Version 2.0
  *
  * 2017-12-04 - AR.
@@ -13,8 +13,10 @@ var Url = require('url');
 
 module.exports = function request(uri, body, cb) { return request.request(uri, body, cb) };
 module.exports.request = microreq;
+module.exports.defaults = defaults;
 
-var microreqOptions = {url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1};
+var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1,
+    baseUrl:1, };
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
 
 /*
@@ -25,10 +27,7 @@ function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return s
  * makeError and readBody adapted from qibl 1.5.0-pre
  */
 function microreq( uri, body, callback ) {
-    if (!callback) {
-        callback = body;
-        body = undefined;
-    }
+    if (!callback) { callback = body; body = undefined }
     body = (body != undefined) ? body : (uri.body != undefined) ? uri.body : undefined;
     if (!uri || !callback) throw new Error("uri and callback required");
 
@@ -58,7 +57,7 @@ function microreq( uri, body, callback ) {
     function doCallback(err, res, body) { timer && clearTimeout(timer); if (!doneCount++) callback(err, res, body) }
 
     var httpCaller = requestOptions.protocol === 'https:' ? https : http;
-    req = httpCaller.request(requestOptions, function(res) {
+    req = httpCaller.request(requestOptions, function onConnect(res) {
         connected = true;
         if (encoding && encoding !== 'json' && res.setEncoding) res.setEncoding(encoding);
         if (noResListen) return (!doneCount++ && callback(null, res));  // direct callback to not cancel timeouts
@@ -82,6 +81,39 @@ function microreq( uri, body, callback ) {
     else if (!noReqEnd) req.end();
 
     return req;
+}
+
+function defaults( options ) {
+    if (!options || typeof options === 'string') options = { url: options || '' };
+    var opts = mergeOpts({}, options);
+    if (opts.baseUrl) opts.baseUrl = rtrim(opts.baseUrl, '/');
+    var caller = {
+        _opts: opts,
+        call: function(method, uri, body, cb) {
+            if (!uri || typeof uri === 'string') uri = { url: uri || '' };
+            var url = buildUrl(rtrim(uri.baseUrl, '/') || caller._opts.baseUrl, uri.url);
+            return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method, url: url }), body, cb);
+        },
+        get: function get(url, body, cb) { return caller.call('GET', url, body, cb) },
+        head: function del(url, body, cb) { return caller.call('HEAD', url, body, cb) },
+        post: function post(url, body, cb) { return caller.call('POST', url, body, cb) },
+        put: function put(url, body, cb) { return caller.call('PUT', url, body, cb) },
+        patch: function patch(url, body, cb) { return caller.call('PATCH', url, body, cb) },
+        del: function del(url, body, cb) { return caller.call('DELETE', url, body, cb) },
+        defaults: function(options) { return defaults(mergeOpts(caller._opts, options)) },
+    }
+    caller.delete = caller.del;
+    return caller;
+}
+function rtrim(str, ch) { while (str && str.slice(-1) === ch) str = str.slice(0, -1); return str }
+function buildUrl( baseUrl, pathUrl ) { return baseUrl && pathUrl && pathUrl[0] === '/' ? baseUrl + pathUrl : pathUrl }
+function mergeOpts( dst, src1 /* ...VARARGS */ ) {
+    for (var si = 1; si < arguments.length; si++) {
+        var src = arguments[si], keys = Object.keys(src || {});
+        for (var i = 0; i < keys.length; i++) dst[keys[i]] =
+            (keys[i] !== 'headers') ? src[keys[i]] : mergeOpts(dst[keys[i]] || {}, src[keys[i]]);
+    }
+    return dst;
 }
 
 function makeError( code, message, baseFunc ) {

@@ -462,4 +462,56 @@ module.exports = {
             },
         },
     },
+
+    'defaults': {
+        'returns a request caller': function(t) {
+            var caller = request.defaults();
+            t.equal(typeof caller.get, 'function');
+            t.equal(typeof caller.put, 'function');
+            t.equal(typeof caller.post, 'function');
+            t.equal(typeof caller.del, 'function');
+            t.done();
+        },
+        'methods invoke caller': function(t) {
+            var caller = request.defaults();
+            var methods = Object.keys(caller)
+                .filter(function(m) { return typeof caller[m] === 'function' && m !== 'call' && m !== 'defaults' });
+            var callCount = 0;
+            var spy = t.stub(request, 'request').yields(null, {});
+            for (var i = 0; i < methods.length; i++) {
+                caller[methods[i]]('some.url', 'mock-body', function(err, res) {
+                    if (++callCount === methods.length) {
+                        spy.restore();
+                        t.equal(callCount, methods.length);
+                        t.done();
+                    }
+                })
+            }
+        },
+        'caller incorporates inherited, default and user options': function(t) {
+            var caller = request
+                .defaults({ baseUrl: 'some-base-url//' })
+                .defaults({ someOption: 'TRUE-234' });
+            var spy = t.stubOnce(request, 'request').yields(null, {});
+            caller.call('FOO', { url: '/some-path', otherOption: '567' }, function(err, res, body) {
+                t.ok(spy.called);
+                t.contains(spy.args[0][0], {
+                    method: 'FOO',              // retains method
+                    baseUrl: 'some-base-url',   // inherited option, and strips trailing '/' from baseUrl
+                    someOption: 'TRUE-234',     // default option
+                    otherOption: '567',         // user option
+                    url: 'some-base-url/some-path' });  // built url
+                t.done();
+            })
+        },
+        'caller invokes microreq.request': function(t) {
+            var caller = request.defaults();
+            var spy = t.stubOnce(request, 'request').yields(null, { body: 'mock response' });
+            caller.call('GET', 'some.url', 'mock-body', function(err, res, body) {
+                t.ok(spy.called);
+                t.equal(res.body, 'mock response');
+                t.done();
+            })
+        },
+    },
 };
