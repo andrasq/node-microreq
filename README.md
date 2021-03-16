@@ -53,8 +53,9 @@ Options that control the behavior of `microreq` (all other options are passed to
 - `auth` - http Basic auth credentials as either the colon-separated `username:password`
     string, or an object `{username: <login>, password: <passwd>}`.  The credentials
     are used to generate an `Authorization: Basic <base64>` header.  Default no auth.
-- `followRedirects` - follow up to 10 redirects by replaying the request against the redirected-to location.
-    This is admittedly simplistic, so use advisedly.  Default off, enable with `true`.
+- `maxRedirects` - how many 30x redirects to follow by replaying the request against the
+    redirected-to location.  This is very simplistic, so use advisedly.  Default `0`,
+    to not follow redirects.  Enable by setting to a positive number e.g. `10`.
 
 ### caller = request.defaults( options )
 

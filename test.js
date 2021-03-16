@@ -135,7 +135,7 @@ module.exports = {
             })
         },
 
-        'accepts auth': {
+        'options.auth': {
             'string': function(t) {
                 var spy = t.spyOnce(http, 'request');
                 request({ url: 'http://host/path', auth: 'user1:pass1' }, function() {
@@ -180,6 +180,45 @@ module.exports = {
                     t.contains(spy.args[0][0].headers.Authorization, 'Basic ');
                     t.done();
                 })
+            },
+        },
+
+        'options.maxRedirects': {
+            'retries the request': function(t) {
+                qmock.mockHttp()
+                    .when('http://hostname:1/foo')
+                        .send(301, 'Moved.', { location: 'https://hostname2:22/bar' })
+                    .when('https://hostname2:22/bar')
+                        .send(301, 'Moved.', { location: 'http://hostname3:333/bat' })
+                    .when('http://hostname3:333/bat')
+                        .send(200, 'OK')
+                    ;
+                request.defaults({ maxRedirects: 5 }).get('http://hostname:1/foo', function(err, res, body) {
+                    t.ifError(err);
+                    t.equal(body, 'OK');
+                    t.done();
+                })
+            },
+            'errors out if too many redirects': function(t) {
+                qmock.mockHttp()
+                    .when('http://hostname:80/foo')
+                        .send(301, 'Moved.', { location: 'http://hostname:80/foo' });
+                request.defaults({ maxRedirects: 10 }).get('http://hostname:80/foo', function(err, res, body) {
+                    t.ok(err);
+                    t.equal(err.code, 'REDIRECT');
+                    t.done();
+                })
+            },
+            'can read from google.com': function(t) {
+                t.skip();
+                // google.com redirects to www.google.com
+                request.defaults({ maxRedirects: 5, encoding: 'utf8' })
+                    .request('http://google.com/search?q=nodejs', function(err, res, body) {
+                        console.log("AR: got:", err, res && res.statusCode, '' + body);
+                        t.ifError(err);
+                        t.ok(body.length > 1000);
+                        t.done();
+                    });
             },
         },
 

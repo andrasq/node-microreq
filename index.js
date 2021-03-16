@@ -73,14 +73,15 @@ function microreq( uri, body, callback ) {
             else chunks.push(chunk);
         })
         res.on('end', function() {
-            var body = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
-            if (encoding) body = (encoding === 'json') ? tryJsonParse(body) : (typeof body !== 'string') ? body.toString(encoding) : body;
-            if (false && res.statusCode >= 300 && res.statusCode < 400 && uri.followRedirects === true && res.headers.location) {
-                if (++uri._redirectCount >= maxRedirects) return doCallback(new Error('too many redirects'));
-                uri.url = res.headers.location;
-                clearTimeout(timer);
-                module.exports.request(uri, onConnect);
-            } else doCallback(null, res, body);
+            var resBody = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
+            if (encoding) resBody = (encoding === 'json') ? tryJsonParse(resBody) : (typeof resBody !== 'string') ? resBody.toString(encoding) : resBody;
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                clearTimeout(timer);  // NOTE: redirect location must include the query and hash
+                var caller = defaults(uri).defaults({ baseUrl: '', url: res.headers.location, body: body })
+                    .defaults({ maxRedirects: +uri.maxRedirects - 1 });
+                if (uri.maxRedirects <= 0) return doCallback(makeError('REDIRECT', 'too many redirects'));
+                caller.request({}, callback);
+            } else doCallback(null, res, resBody);
         })
         res.on('error', onError);
     })
@@ -114,7 +115,7 @@ function defaults( options ) {
     return caller;
 }
 function rtrim(str, ch) { while (str && str.slice(-1) === ch) str = str.slice(0, -1); return str }
-function buildUrl( baseUrl, pathUrl ) { return baseUrl && pathUrl && pathUrl[0] === '/' ? baseUrl + pathUrl : pathUrl }
+function buildUrl( baseUrl, pathUrl ) { return baseUrl && (!pathUrl || pathUrl[0] === '/') ? baseUrl + pathUrl : pathUrl }
 function mergeOpts( dst, src1 /* ...VARARGS */ ) {
     for (var si = 1; si < arguments.length; si++) {
         var src = arguments[si], keys = Object.keys(src || {});
