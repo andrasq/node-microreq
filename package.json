@@ -3,11 +3,14 @@
   "version": "0.12.0",
   "description": "tiny convenience wrapper around http.request",
   "main": "index.js",
-  "author": "Andras",
   "license": "Apache-2.0",
-  "repository": "https://github.com/andrasq/node-microreq#readme",
-  "keywords": [ "http", "request", "small", "quick", "minimal", "thin", "light" ],
   "engines": { "node": ">= 0.11" },
+  "files": ["index.js", "LICENSE", "README.md"],
+
+  "author": "Andras",
+  "repository": "https://github.com/andrasq/node-microreq",
+  "keywords": [ "http", "request", "small", "quick", "minimal", "thin", "light" ],
+  "readme": "see README.md",
 
   "dependencies": {
   },
