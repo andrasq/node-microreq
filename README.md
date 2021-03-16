@@ -53,6 +53,9 @@ Options that control the behavior of `microreq` (all other options are passed to
 - `auth` - http Basic auth credentials as either the colon-separated `username:password`
     string, or an object `{username: <login>, password: <passwd>}`.  The credentials
     are used to generate an `Authorization: Basic <base64>` header.  Default no auth.
+- `maxRedirects` - how many 30x redirects to follow by replaying the request against the
+    redirected-to location.  This is very simplistic, so use advisedly.  Default `0`,
+    to not follow redirects.  Enable by setting to a positive number e.g. `10`.
 
 ### caller = request.defaults( options )
 
@@ -75,6 +78,7 @@ It is possible to build new callers that inherit defaults from their builder.
 Change Log
 ----------
 
+- **0.13.0** - `followRedirects` option
 - **0.12.0** - `defaults` method, `auth` option
 - **0.11.1** - emit timeout errors if noResListen, faster req launch
 - **0.11.0** - `timeout` option, depend on qmock

@@ -16,7 +16,7 @@ module.exports.request = microreq;
 module.exports.defaults = defaults;
 
 var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1,
-    baseUrl:1, };
+    baseUrl:1, _redirectCount:1, };
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
 var fromBuf = eval('parseInt(process.versions.node) >= 7 ? Buffer.from : Buffer');
 
@@ -51,7 +51,7 @@ function microreq( uri, body, callback ) {
     if (noReqEnd) requestOptions.headers['Transfer-Encoding'] = 'chunked';
     else requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body ? body.length : 0;
 
-    var req, doneCount = 0, body, connected = false, onError = function onError(err) {
+    var req, doneCount = 0, maxRedirects = 10, body, connected = false, onError = function onError(err) {
         if (!err) { !connected ? req.abort() : req.socket.destroy() }
         if (!err) var timeoutErr =  !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout');
         if (!err && noResListen) req.emit('error', timeoutErr); // if callback already called emit the error on req
@@ -73,9 +73,15 @@ function microreq( uri, body, callback ) {
             else chunks.push(chunk);
         })
         res.on('end', function() {
-            var body = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
-            if (encoding) body = (encoding === 'json') ? tryJsonParse(body) : (typeof body !== 'string') ? body.toString(encoding) : body;
-            doCallback(null, res, body);
+            var resBody = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
+            if (encoding) resBody = (encoding === 'json') ? tryJsonParse(resBody) : (typeof resBody !== 'string') ? resBody.toString(encoding) : resBody;
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                clearTimeout(timer);  // NOTE: redirect location must include the query and hash
+                var caller = defaults(uri).defaults({ baseUrl: '', url: res.headers.location, body: body })
+                    .defaults({ maxRedirects: +uri.maxRedirects - 1 });
+                if (uri.maxRedirects <= 0) return doCallback(makeError('REDIRECT', 'too many redirects'));
+                caller.request({}, callback);
+            } else doCallback(null, res, resBody);
         })
         res.on('error', onError);
     })
@@ -109,7 +115,7 @@ function defaults( options ) {
     return caller;
 }
 function rtrim(str, ch) { while (str && str.slice(-1) === ch) str = str.slice(0, -1); return str }
-function buildUrl( baseUrl, pathUrl ) { return baseUrl && pathUrl && pathUrl[0] === '/' ? baseUrl + pathUrl : pathUrl }
+function buildUrl( baseUrl, pathUrl ) { return baseUrl && (!pathUrl || pathUrl[0] === '/') ? baseUrl + pathUrl : pathUrl }
 function mergeOpts( dst, src1 /* ...VARARGS */ ) {
     for (var si = 1; si < arguments.length; si++) {
         var src = arguments[si], keys = Object.keys(src || {});
