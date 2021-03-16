@@ -27,6 +27,7 @@ var fromBuf = eval('parseInt(process.versions.node) >= 7 ? Buffer.from : Buffer'
  * makeError and readBody adapted from qibl 1.5.0-pre
  */
 function microreq( uri, body, callback ) {
+    if (!callback) { callback = body; body = undefined; }
     body = (body != undefined) ? body : (uri.body != undefined) ? uri.body : undefined;
     if (!uri || !callback) throw new Error("uri and callback required");
 
