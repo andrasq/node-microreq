@@ -16,7 +16,7 @@ module.exports.request = microreq;
 module.exports.defaults = defaults;
 
 var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1,
-    baseUrl:1, };
+    baseUrl:1, _redirectCount:1, };
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
 var fromBuf = eval('parseInt(process.versions.node) >= 7 ? Buffer.from : Buffer');
 
@@ -51,7 +51,7 @@ function microreq( uri, body, callback ) {
     if (noReqEnd) requestOptions.headers['Transfer-Encoding'] = 'chunked';
     else requestOptions.headers['Content-Length'] = (typeof body === 'string') ? Buffer.byteLength(body) : body ? body.length : 0;
 
-    var req, doneCount = 0, body, connected = false, onError = function onError(err) {
+    var req, doneCount = 0, maxRedirects = 10, body, connected = false, onError = function onError(err) {
         if (!err) { !connected ? req.abort() : req.socket.destroy() }
         if (!err) var timeoutErr =  !connected ? makeError('ETIMEDOUT', 'connect timeout') : makeError('ESOCKETTIMEDOUT', 'data timeout');
         if (!err && noResListen) req.emit('error', timeoutErr); // if callback already called emit the error on req
@@ -75,7 +75,12 @@ function microreq( uri, body, callback ) {
         res.on('end', function() {
             var body = !chunk1 ? data : !chunks ? chunk1 : Buffer.concat(chunks);
             if (encoding) body = (encoding === 'json') ? tryJsonParse(body) : (typeof body !== 'string') ? body.toString(encoding) : body;
-            doCallback(null, res, body);
+            if (false && res.statusCode >= 300 && res.statusCode < 400 && uri.followRedirects === true && res.headers.location) {
+                if (++uri._redirectCount >= maxRedirects) return doCallback(new Error('too many redirects'));
+                uri.url = res.headers.location;
+                clearTimeout(timer);
+                module.exports.request(uri, onConnect);
+            } else doCallback(null, res, body);
         })
         res.on('error', onError);
     })
