@@ -365,25 +365,38 @@ module.exports = {
             })
         },
 
-        'alt should return without ending call if noReqEnd': function(t) {
-            t.mockHttp()
-                .when('http://host/path')
-                    .send(200, 'test response')
-            ;
-            var spy;
-            var req = request({
-                url: 'http://host/path',
-                body: 'test data',
-                noReqEnd: true,
-            }, function(err, res, body) {
-                t.deepEqual(req._mockWrites, [['test data', undefined], ['more test data', 'utf8'], null]);
-                t.equal(String(body), 'test response');
-                t.equal(spy.callCount, 1);
-                t.done();
-            })
-            spy = t.spy(req, 'end');
-            req.write('more test data', 'utf8');
-            req.end();
+        'should return without ending call if noReqEnd': {
+            before: function(done) {
+                this.runTest = function(t, reqBody, expect) {
+                    t.mockHttp()
+                        .when('http://host/path')
+                            .send(200, 'test response')
+                    ;
+                    var spy;
+                    var req = request({
+                        url: 'http://host/path',
+                        body: reqBody,
+                        noReqEnd: true,
+                    }, function(err, res, body) {
+                        t.deepEqual(req._mockWrites, expect);
+                        t.equal(String(body), 'test response');
+                        t.equal(spy.callCount, 1);
+                        t.done();
+                    })
+                    spy = t.spy(req, 'end');
+                    req.write('more test data', 'utf8');
+                    req.end();
+                }
+                done();
+            },
+
+            'with body 2': function(t) {
+                this.runTest(t, 'test data', [['test data', undefined], ['more test data', 'utf8'], null]);
+            },
+
+            'without body 2': function(t) {
+                this.runTest(t, undefined, [['more test data', 'utf8'], null]);
+            },
         },
 
         'errors': {
@@ -433,7 +446,7 @@ module.exports = {
                 // hit an ip address that will not exist in the test environment
                 var req = request({ url: 'http://10.0.0.0/', timeout: 20 }, function(err, res, body) {
                     t.ok(err);
-                    t.equal(err.code, 'ETIMEDOUT');
+                    t.equal(err.code, 'ETIMEDOUT'); // FIXME: sometimes EHOSTUNREACH
                     t.ok(Date.now() - t1 < 30);
                     t.done();
                 })
@@ -502,9 +515,11 @@ module.exports = {
                 })
             }
         },
-        'caller incorporates inherited, default and user options': function(t) {
+        'caller merges inherited, default and user options': function(t) {
             var caller = request
                 .defaults({ baseUrl: 'some-base-url//' })
+                .defaults(0)
+                .defaults({ headers: { Accept: 'foo/bar' } })
                 .defaults({ someOption: 'TRUE-234' });
             var spy = t.stubOnce(request, 'request').yields(null, {});
             caller.call('FOO', { url: '/some-path', otherOption: '567' }, function(err, res, body) {
@@ -514,7 +529,9 @@ module.exports = {
                     baseUrl: 'some-base-url',   // inherited option, and strips trailing '/' from baseUrl
                     someOption: 'TRUE-234',     // default option
                     otherOption: '567',         // user option
-                    url: 'some-base-url/some-path' });  // built url
+                    url: 'some-base-url/some-path',     // built url
+                    headers: { Accept: 'foo/bar' },     // merged headers
+                });
                 t.done();
             })
         },
