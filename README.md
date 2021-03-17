@@ -78,7 +78,7 @@ It is possible to build new callers that inherit defaults from their builder.
 Change Log
 ----------
 
-- **0.13.0** - `maxRedirects` option
+- **0.13.1** - `maxRedirects` option
 - **0.12.0** - `defaults` method, `auth` option
 - **0.11.1** - emit timeout errors if noResListen, faster req launch
 - **0.11.0** - `timeout` option, depend on qmock
