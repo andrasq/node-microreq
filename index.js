@@ -98,7 +98,7 @@ function defaults( options ) {
     var caller = {
         _opts: mergeOpts({}, options),
         call: function(method, uri, body, cb) {
-            if (!uri || typeof uri === 'string') uri = { url: '' + uri };
+            if (typeof uri !== 'object') uri = { url: uri };
             var url = buildUrl(rtrim(uri.baseUrl || caller._opts.baseUrl || '', '/'), uri.url || caller._opts.url);
             return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method, url: url }), body, cb);
         },
