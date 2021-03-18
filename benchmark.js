@@ -18,6 +18,7 @@ if (cluster.isMaster) {
         req.on('data', function() {});
         req.on('end', function() {
             if (req.url === '/close') server.close();
+            // res.setHeader('Date', '-'); // faster without turning off Date
             res.end('OK');
         })
     }).listen(1337);
