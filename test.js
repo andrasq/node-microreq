@@ -364,6 +364,16 @@ module.exports = {
             })
         },
 
+        'should merge baseUrl and url': function(t) {
+            qmock.unmockHttp();
+            request({ baseUrl: 'http://localhost:1337', url: '/utf8', encoding: 'utf8' }, function(err, res, body) {
+                t.ifError(err);
+                t.equal(typeof body, 'string');
+                t.equal(body, 'utf8 response');
+                t.done();
+            })
+        },
+
         'should return decoded response even without res.setEncoding': function(t) {
             t.mockHttp()
                 .when('http://some/url')

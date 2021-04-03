@@ -41,7 +41,7 @@ function microreq( uri, body, callback ) {
 
     if (uri.url != undefined) {
         // copy pathmame too for older qnit mockHttp(); nodejs ignores it
-        var urlParts = Url.parse(uri.url), copyFields = { protocol:1, hostname:1, port:1, path:1, pathname:1 };
+        var urlParts = Url.parse(buildUrl(uri.baseUrl, uri.url)), copyFields = { protocol:1, hostname:1, port:1, path:1, pathname:1 };
         for (var k in copyFields) if (urlParts[k] != null) requestOptions[k] = urlParts[k];
         if (requestOptions.auth === undefined) requestOptions.auth = urlParts.auth; // uri.auth overrides the url
     }
