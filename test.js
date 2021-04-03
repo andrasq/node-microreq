@@ -9,6 +9,7 @@
 
 var http = require('http');
 var https = require('https');
+var events = require('events');
 
 var qmock = require('qmock');
 var request = require('./');
@@ -621,25 +622,29 @@ module.exports = {
                 .defaults(0)
                 .defaults({ headers: { Accept: 'foo/bar' } })
                 .defaults({ someOption: 'TRUE-234' });
-            var spy = t.stubOnce(request, 'request').yields(null, {});
+            var spy = t.spyOnce(request, 'request');
+            var spyHttp = t.stubOnce(http, 'request').yields(mockRes()).returns(mockReq());
             caller.call('FOO', { url: '/some-path', otherOption: '567' }, function(err, res, body) {
                 t.ok(spy.called);
                 t.contains(spy.args[0][0], {
                     method: 'FOO',              // retains method
                     someOption: 'TRUE-234',     // default option
                     otherOption: '567',         // user option
-                    url: 'some-base-url/some-path',     // built url using inherited option
+                    baseUrl: 'some-base-url//',
+                    url: '/some-path',
                     headers: { Accept: 'foo/bar' },     // merged headers
                 });
+                t.ok(spyHttp.called);
+                t.contains(spyHttp.args[0][0], { path: 'some-base-url/some-path' });
                 t.done();
             })
         },
-        'caller uses default url': function(t) {
+        'caller uses combined baseUrl + url': function(t) {
             var caller = request.defaults({ url: '/url' }).defaults({ baseUrl: '/some' });
-            var spy = t.stubOnce(request, 'request').yields(null, {});
+            var spy = t.stubOnce(http, 'request').returns(mockReq()).yields(mockRes());
             caller.call('GET', '', 'mock body', function(err, res, body) {
                 t.ok(spy.called);
-                t.contains(spy.args[0][0], { url: '/some/url' });
+                t.contains(spy.args[0][0], { path: '/some/url' });
                 t.done();
             })
         },
@@ -654,3 +659,15 @@ module.exports = {
         },
     },
 };
+
+function mockRes() {
+    var res = new events.EventEmitter();
+    setTimeout(function() { res.emit('data', 'x') }, 3);
+    setTimeout(function() { res.emit('end', 'x') }, 4);
+    return res;
+}
+function mockReq() {
+    var req = new events.EventEmitter();
+    req.end = function(){};
+    return req;
+}

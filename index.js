@@ -98,9 +98,8 @@ function defaults( options ) {
     var caller = {
         _opts: mergeOpts({}, options),
         call: function(method, uri, body, cb) {
-            if (typeof uri !== 'object') uri = { url: uri };
-            var url = buildUrl(rtrim(uri.baseUrl || caller._opts.baseUrl || '', '/'), uri.url || caller._opts.url);
-            return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method, url: url }), body, cb);
+            if (typeof uri !== 'object') uri = (typeof uri === 'string' && uri) ? { url: uri } : {};
+            return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method }), body, cb);
         },
         request: function request(uri, body, cb) { return caller.call(uri.method, uri, body, cb) },
         defaults: function(options) { return defaults(mergeOpts(caller._opts, options)) },
@@ -115,7 +114,7 @@ function defaults( options ) {
     return caller;
 }
 function rtrim(str, ch) { while (str && str.slice(-1) === ch) str = str.slice(0, -1); return str }
-function buildUrl( baseUrl, pathUrl ) { return baseUrl && (!pathUrl || pathUrl[0] === '/') ? baseUrl + pathUrl : pathUrl }
+function buildUrl( baseUrl, pathUrl ) { return baseUrl && (!pathUrl || pathUrl[0] === '/') ? rtrim(baseUrl, '/') + pathUrl : pathUrl }
 function mergeOpts( dst, src1 /* ...VARARGS */ ) {
     for (var si = 1; si < arguments.length; si++) {
         var src = arguments[si], keys = Object.keys(src || {});
