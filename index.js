@@ -15,8 +15,7 @@ module.exports = function request(uri, body, cb) { return request.request(uri, b
 module.exports.request = microreq;
 module.exports.defaults = defaults;
 
-var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1,
-    baseUrl:1, _redirectCount:1, };
+var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1, baseUrl:1, };
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
 var fromBuf = eval('parseInt(process.versions.node) >= 7 ? Buffer.from : Buffer');
 
