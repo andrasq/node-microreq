@@ -1,6 +1,6 @@
 microreq
 ========
-[![Build Status](https://api.travis-ci.org/andrasq/node-microreq.svg?branch=master)](https://travis-ci.org/andrasq/node-microreq?branch=master)
+[![Build Status](https://api.travis-ci.com/andrasq/node-microreq.svg?branch=master)](https://travis-ci.com/andrasq/node-microreq?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/andrasq/node-microreq/badge.svg?branch=master)](https://coveralls.io/github/andrasq/node-microreq?branch=master)
 
 Extremely thin convenience wrapper around `http.request` to make it usable more like
