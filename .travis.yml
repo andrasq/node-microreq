@@ -1,5 +1,6 @@
 before_install:
-  - npm install qnit
+  # travis-ci.com breaks on "npm ci" when unable to remove qmock ??
+  - npm install qnit qmock
 language: node_js
 node_js:
   # 0.10 and 0.8 might need a newer qmock:
