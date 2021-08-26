@@ -16,6 +16,7 @@ module.exports.request = microreq;
 module.exports.defaults = defaults;
 
 var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1, baseUrl:1, };
+var urlBlankFields = { protocol: null, hostname: null, port: null, path: null, pathname: null };
 function tryJsonParse(str) { try { return JSON.parse(str) } catch (e) { return str.toString('utf8') } }
 var fromBuf = eval('parseInt(process.versions.node) >= 7 ? Buffer.from : Buffer');
 
@@ -40,8 +41,8 @@ function microreq( uri, body, callback ) {
 
     if (uri.url != undefined) {
         // copy pathmame too for older qnit mockHttp(); nodejs ignores it
-        var urlParts = Url.parse(buildUrl(uri.baseUrl, uri.url)), copyFields = { protocol:1, hostname:1, port:1, path:1, pathname:1 };
-        for (var k in copyFields) if (urlParts[k] != null) requestOptions[k] = urlParts[k];
+        var urlParts = Url.parse(buildUrl(uri.baseUrl, uri.url));
+        for (var k in urlBlankFields) if (urlParts[k] != null) requestOptions[k] = urlParts[k];
         if (requestOptions.auth === undefined) requestOptions.auth = urlParts.auth; // uri.auth overrides the url
     }
     if (requestOptions.auth) requestOptions.headers['Authorization'] = 'Basic ' + fromBuf(requestOptions.auth).toString('base64');
@@ -76,9 +77,11 @@ function microreq( uri, body, callback ) {
             if (encoding) resBody = (encoding === 'json') ? tryJsonParse(resBody) : (typeof resBody !== 'string') ? resBody.toString(encoding) : resBody;
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
                 clearTimeout(timer);  // NOTE: redirect location must include the query and hash
-                var caller = defaults(uri).defaults({ baseUrl: '', url: res.headers.location, body: body })
-                    .defaults({ maxRedirects: +uri.maxRedirects - 1 });
                 if (uri.maxRedirects <= 0) return doCallback(makeError('REDIRECT', 'too many redirects'));
+                var caller = defaults(mergeOpts(uri, res.headers.location[0] === '/'
+                    ? { baseUrl: buildBaseUrl(urlParts || uri) } : mergeOpts({ baseUrl: null }, urlBlankFields),
+                    { body: body, maxRedirects: +uri.maxRedirects - 1, url: res.headers.location })
+                );;
                 caller.request({}, callback);
             } else doCallback(null, res, resBody);
         })
@@ -114,6 +117,7 @@ function defaults( options ) {
 }
 function rtrim(str, ch) { while (str && str.slice(-1) === ch) str = str.slice(0, -1); return str }
 function buildUrl( baseUrl, pathUrl ) { return baseUrl && (!pathUrl || pathUrl[0] === '/') ? rtrim(baseUrl, '/') + pathUrl : pathUrl }
+function buildBaseUrl( uri ) { return (uri.protocol || 'http:') + '//' + (uri.hostname || 'localhost') + (uri.port ? ':' + uri.port : '') }
 function mergeOpts( dst, src1 /* ...VARARGS */ ) {
     for (var si = 1; si < arguments.length; si++) {
         var src = arguments[si], keys = Object.keys(src || {});

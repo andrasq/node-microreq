@@ -78,6 +78,7 @@ It is possible to build new callers that inherit defaults from their builder.
 Change Log
 ----------
 
+- **0.13.3** - fix relative-path redirects
 - **0.13.2** - fix baseUrl concatenation, fix defaults() baseUrl handling
 - **0.13.1** - `maxRedirects` option
 - **0.12.0** - `defaults` method, `auth` option

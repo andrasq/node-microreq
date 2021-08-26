@@ -192,11 +192,44 @@ module.exports = {
                     .when('https://hostname2:22/bar')
                         .send(301, 'Moved.', { location: 'http://hostname3:333/bat' })
                     .when('http://hostname3:333/bat')
-                        .send(200, 'OK')
+                        .send(301, 'Moved.', { location: '/baz/' })
+                    .when('http://hostname3:333/baz/')
+                        .send(234, 'OK')
                     ;
                 request.defaults({ maxRedirects: 5 }).get('http://hostname:1/foo', function(err, res, body) {
                     t.ifError(err);
                     t.equal(body, 'OK');
+                    t.equal(res.statusCode, 234);
+                    t.done();
+                })
+            },
+            'redirects to defaults': function(t) {
+                qmock.mockHttp()
+                    .when('proto://myhost:1234/foo')
+                        .send(301, 'Moved.', { location: 'http://otherhost/bar' })
+                    .when('http://otherhost/bar')
+                        .send(301, 'Moved.', { location: '/bat' })
+                    .when('http://otherhost/bat')
+                        .send(222, 'OK');
+                request.defaults({ maxRedirects: 5 })
+                .get({ protocol: 'proto:', hostname: 'myhost', port: 1234, path: '/foo' }, function(err, res, body) {
+                    t.ifError(err);
+                    t.equal(body, 'OK');
+                    t.equal(res.statusCode, 222);
+                    t.done();
+                })
+            },
+            'redirects with all defaults': function(t) {
+                qmock.mockHttp()
+                    .when('http://localhost/foo')
+                        .send(301, 'Moved.', { location: '/bar' })
+                    .when('http://localhost/bar')
+                        .send(223, 'OK');
+                ;
+                request.defaults({ maxRedirects: 5 }).get({ path: '/foo' }, function(err, res, body) {
+                    t.ifError(err);
+                    t.equal(body, 'OK');
+                    t.equal(res.statusCode, 223);
                     t.done();
                 })
             },
@@ -571,6 +604,7 @@ module.exports = {
                 var t1 = Date.now();
                 var req = request({ url: 'http://10.0.0.0/', timeout: 20, noResListen: true }, function(err, res) {
                     t.ok(err);
+                    // NOTE: race: this can fail with EHOSTUNREACH instead, presumably DNS latency
                     t.equal(err.code, 'ETIMEDOUT');
                     t.ok(Date.now() - t1 < 30);
                     t.done();
