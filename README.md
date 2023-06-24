@@ -81,10 +81,26 @@ Same as specifying `{method: 'GET'}` in the `uri` of `caller.request(uri)`.
 
 It is possible to build new callers that inherit defaults from their builder.
 
+### promise = request.requestp( uri )
+
+Make an http or https request and return a Promise that fulfills with the response,
+or rejects with call errors or 4xx or 5xx http errors.  The Promise resolves with
+properties `status` the http status code and `data` the returned data.  The format of
+the data is as specified by the uri `encoding`, typically either `'utf8'` or `'json'`.
+If the encoding is not specified, the raw response Buffer is returned.
+
+    const request = require('microreq');
+
+    request.requestp({ url: 'http://github.com/andrasq', encoding: 'utf8' })
+    .then((response) => {
+        console.log('call returned http %d with data', response.status, response.data);
+    })
+
 
 Change Log
 ----------
 
+- **0.14.0** - new `requestp` function
 - **0.13.3** - fix relative-path redirects
 - **0.13.2** - fix baseUrl concatenation, fix defaults() baseUrl handling
 - **0.13.1** - `maxRedirects` option
@@ -105,3 +121,4 @@ Related Work
 - [`khttp`](https://github.com/andrasq/node-k-http) - fast mini request
 - [`qhttp`](https://npmjs.com/package/qhttp) - fast http convenience utils
 - [`request`](https://npmjs.com/package/request) - old featureful request
+- [`axios`](https://npmjs.com/package/axios) - request wrapped in a Promise

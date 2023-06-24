@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017-2019 Kinvey, Inc., 2020-2021 Andras Radics
+ * Copyright (C) 2017-2019 Kinvey, Inc., 2020-2023 Andras Radics
  * Licensed under the Apache License, Version 2.0
  *
  * 2017-12-04 - AR.
@@ -14,6 +14,7 @@ var Url = require('url');
 module.exports = function request(uri, body, cb) { return request.request(uri, body, cb) };
 module.exports.request = microreq;
 module.exports.defaults = defaults;
+module.exports.requestp = requestp;
 
 var microreqOptions = { url:1, body:1, headers:1, noReqEnd:1, noResListen:1, encoding:1, timeout:1, auth:1, baseUrl:1, };
 var urlBlankFields = { protocol: null, hostname: null, port: null, path: null, pathname: null };
@@ -95,6 +96,10 @@ function microreq( uri, body, callback ) {
     return req;
 }
 
+/*
+ * return a microreq pre-populated with default parameters and get, post etc methods, like request.defaults
+ * Call-time arguments overwrite the defaults.
+ */
 function defaults( options ) {
     if (!options || typeof options === 'string') options = { url: options || '' };
     var caller = {
@@ -104,6 +109,7 @@ function defaults( options ) {
             return module.exports.request(mergeOpts({}, caller._opts, uri, { method: method }), body, cb);
         },
         request: function request(uri, body, cb) { return caller.call(uri.method, uri, body, cb) },
+        requestp: function requestp(uri, body, cb) { return _requestp(caller, uri) },
         defaults: function(options) { return defaults(mergeOpts(caller._opts, options)) },
         get: function get(url, body, cb) { return caller.call('GET', url, body, cb) },
         head: function del(url, body, cb) { return caller.call('HEAD', url, body, cb) },
@@ -127,7 +133,37 @@ function mergeOpts( dst, src1 /* ...VARARGS */ ) {
     return dst;
 }
 
+/*
+ * request wrappered in a Promise kind of like axios
+ */
+function requestp( uri ) {
+    return _requestp(module.exports, uri);
+}
+function _requestp( caller, uri ) {
+    return new Promise(function(resolve, reject) {
+        var req = caller.request(uri, function(err, res, body) {
+            if (err) return reject(err);
+            var bundle = {
+                status: res.statusCode,
+                statusText: http.STATUS_CODES[res.statusCode],
+                headers: res.headers,
+                request: req,
+                response: res,
+                data: body,
+            }
+            if (res.statusCode < 400) return resolve(bundle);
+            var err = new Error('request failed: ' + bundle.status + ' ' + bundle.statusText);
+            reject(assignTo(err, bundle));
+        })
+    })
+}
+
 function makeError( code, message, baseFunc ) {
     var err = typeof message === 'object' ? message : (err = new Error(message), Error.captureStackTrace(err, baseFunc), err);
     return (err.code = code, err);
+}
+
+function assignTo( dst, src ) {
+    for (var k in src) dst[k] = src[k];
+    return dst;
 }

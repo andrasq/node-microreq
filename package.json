@@ -1,6 +1,6 @@
 {
   "name": "microreq",
-  "version": "0.13.3",
+  "version": "0.14.0",
   "description": "tiny full speed convenience wrapper around http.request",
   "main": "index.js",
   "license": "Apache-2.0",

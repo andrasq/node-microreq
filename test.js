@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017 Kinvey, Inc., 2020-2021 Andras Radics
+ * Copyright (C) 2017 Kinvey, Inc., 2020-2023 Andras Radics
  * Licensed under the Apache License, Version 2.0
  *
  * 2017-12-04 - AR.
@@ -16,6 +16,7 @@ var request = require('./');
 
 // fromBuf adapted from qibl
 var fromBuf = eval('parseInt(process.versions.node) >= 6 ? Buffer.from : Buffer');
+var setImmediate = eval('global.setImmediate || function(fn, a, b) { process.nextTick(fn, a, b) }');
 
 var echoServer = http.createServer(function(req, res) {
     req.resume();
@@ -531,6 +532,43 @@ module.exports = {
             },
         },
 
+        'promises': {
+            'can return a Promise': function(t) {
+                if (typeof global.Promise !== 'function') t.skip();
+                t.mockHttp().when('http://host/path').send(234, 'test response');
+                var p = request.requestp({ method: 'GET', url: 'http://host/path' });
+                t.ok(p instanceof global.Promise);
+                p.then(function(info) {
+                    t.equal(info.status, 234);
+                    t.equal(info.data, 'test response');
+                    t.ok(info.request instanceof http.ClientRequest);
+                    t.ok(info.response instanceof http.IncomingMessage);
+                    t.done();
+                }).catch(function(err) { t.done(err) });
+            },
+
+            'can reject with a Promise': function(t) {
+                if (typeof global.Promise !== 'function') t.skip();
+                t.mockHttp().when('http://host/path').send(456, '{"msg":"your bad"}');
+                var p = request.requestp({ method: 'GET', url: 'http://host/path', encoding: 'json' });
+                p.catch(function(err) {
+                    t.equal(err.status, 456);
+                    t.deepEqual(err.data, { msg: 'your bad' });
+                    t.ok(err.request instanceof http.ClientRequest);
+                    t.done();
+                })
+            },
+
+            'catches exceptions': function(t) {
+                if (typeof global.Promise !== 'function') t.skip();
+                t.mockHttp().when('http://host/path').throw(new Error('my bad'));
+                var p = request.requestp({ method: 'GET', url: 'http://host/path', encoding: 'json' });
+                p.catch(function(err) {
+                    t.done();
+                })
+            },
+        },
+
         'errors': {
             'should require callback': function(t) {
                 try { request("https://localhost") }
@@ -636,8 +674,9 @@ module.exports = {
         },
         'methods invoke request.request': function(t) {
             var caller = request.defaults();
-            var methods = Object.keys(caller)
-                .filter(function(m) { return typeof caller[m] === 'function' && m !== 'call' && m !== 'defaults' });
+            var methods = Object.keys(caller).filter(function(m) {
+                return typeof caller[m] === 'function' && m !== 'call' && m !== 'defaults' && m !== 'requestp';
+            });
             var callCount = 0;
             var spy = t.stub(request, 'request').yields(null, {});
             for (var i = 0; i < methods.length; i++) {
@@ -690,6 +729,18 @@ module.exports = {
                 t.equal(res.body, 'mock response');
                 t.done();
             })
+        },
+        'caller.requestp invokes caller.request and returns a Promise': function(t) {
+            if (typeof global.Promise !== 'function') t.skip();
+            t.mockHttp().when('http://host/path').send(200, 'test response');
+            var caller = request.defaults();
+            var spy = t.spyOnce(caller, 'request');
+            var promise = caller.requestp({ url: 'http://host/path' });
+            t.ok(promise instanceof Promise);
+            promise.then(function(result) {
+                t.ok(spy.called);
+                t.done();
+            }).catch(function(err) { t.done(err) });
         },
     },
 };
