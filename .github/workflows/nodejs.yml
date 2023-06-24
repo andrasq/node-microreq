@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         # github ci errors out on 0.8.x deps
-        node: [ 0.10.x, 4, 12, 16, 5.8.0 ]
+        node: [ 0.11.x, 12, 16, 5.8.0 ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
