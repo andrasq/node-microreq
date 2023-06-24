@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm install
-      - run: npm install -g qnit npm@2.15.0
+      # - run: npm install -g qnit npm@2.15.0
       - run: npm test
 
       - name: coverage

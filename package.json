@@ -15,7 +15,8 @@
   "dependencies": {
   },
   "devDependencies": {
-    "qmock": "0.16.3"
+    "qmock": "0.16.3",
+    "qnit": "x"
   },
 
   "scripts": {
