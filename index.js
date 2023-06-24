@@ -155,6 +155,7 @@ function _requestp( caller, uri ) {
             var err = new Error('request failed: ' + bundle.status + ' ' + bundle.statusText);
             reject(assignTo(err, bundle));
         })
+        req.on('error', function(err) { reject(err) });
     })
 }
 
