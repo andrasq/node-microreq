@@ -39,6 +39,7 @@ Buffer.  The exact behavior can be tuned with the `noResListen` and `noReqEnd` o
 
 Options that control the behavior of `microreq` (all other options are passed to `http`):
 
+- `method` - the request method to pass to http.request.  Default 'GET'.
 - `url` - web address string to call to.  If provided, it must not be the empty string `''`.
 - `body` - body to send, if any.  A body passed as a function argument takes precedence.
 - `noReqEnd` - do not call `req.end()` after writing the body, let the caller append
@@ -56,6 +57,9 @@ Options that control the behavior of `microreq` (all other options are passed to
 - `maxRedirects` - how many 30x redirects to follow by replaying the request against the
     redirected-to location.  This is very simplistic, so use advisedly.  Default `0`,
     to not follow redirects.  Enable by setting to a positive number e.g. `10`.
+- `timeout` - how many ms to wait for the connection to be established, and once
+    connected for the response to arrive.  Default `0` zero, unlimited.  If enabled,
+    the max wait time for a response is connect + response = `timeout + timeout` ms.
 
 ### caller = request.defaults( options )
 
@@ -63,8 +67,11 @@ Build an request caller with the options wired in and a method `request` to make
 requests and `defaults` to build callers with inherited configs.  Also provides convenience
 methods `get`, `put`, `post`, `head`, `patch` and `del` that specify the method.
 All the call methods ultimately invoke `microreq.request`.
+Call-time options override any wired options.
 
 #### caller.request( uri, [body,] callback )
+
+Same as `request(mergedOptions)` where the uri options have been merged into the defaults.
 
 #### caller.get( uri, [body,] callback )
 
