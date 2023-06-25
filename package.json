@@ -15,12 +15,12 @@
   "dependencies": {
   },
   "devDependencies": {
-    "qmock": "0.16.3",
+    "qmock": "0.17.2",
     "qnit": "x"
   },
 
   "scripts": {
-    "test": "qnit test.js",
+    "test": "node -v ; qnit test.js",
     "coverage": "nyc --reporter lcov --reporter text npm test",
     "clean": "rm -rf .nyc_output coverage"
   }

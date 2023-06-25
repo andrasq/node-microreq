@@ -7,23 +7,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # github ci errors out on 0.8.x deps
-        node: [ 0.11.x, 12, 16, 5.8.0 ]
+        # 0.10 and 0.8 might need a newer qmock
+        node: [ 0.11.x, 6, 8, 12, 16, 5.8.0 ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - run: npm install
-      # - run: npm install -g qnit npm@2.15.0
-      - run: npm test
 
-      - name: coverage
+      - name: npm test
+        run: test `node -v` '!=' 'v5.8.0' && npm test || true
+
+      - name: install nyc
         if: ${{ matrix.node == '5.8.0' }}
-        run: |
-          # test `node -v` = '5.8.0' || exit
-          npm install -g nyc@8.4.0
-          npm run coverage
+        run: npm install -g nyc@8.4.0
+
+      - name: test coverage
+        if: ${{ matrix.node == '5.8.0' }}
+        run: npm run coverage
+
       - name: upload coverage
         if: ${{ matrix.node == '5.8.0' }}
         uses: coverallsapp/github-action@v1.1.2

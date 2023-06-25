@@ -187,8 +187,6 @@ module.exports = {
 
         'options.maxRedirects': {
             'retries the request': function(t) {
-// FIXME: some kind of race, "this.socket.destroy is not a function", but only on github ci/cd and only w/ node-v16
-t.skip();
                 qmock.mockHttp()
                     .when('http://hostname:1/foo')
                         .send(301, 'Moved.', { location: 'https://hostname2:22/bar' })
@@ -207,7 +205,6 @@ t.skip();
                 })
             },
             'redirects to defaults': function(t) {
-t.skip();
                 qmock.mockHttp()
                     .when('proto://myhost:1234/foo')
                         .send(301, 'Moved.', { location: 'http://otherhost/bar' })
@@ -224,7 +221,6 @@ t.skip();
                 })
             },
             'redirects with all defaults': function(t) {
-t.skip();
                 qmock.mockHttp()
                     .when('http://localhost/foo')
                         .send(301, 'Moved.', { location: '/bar' })
@@ -239,7 +235,6 @@ t.skip();
                 })
             },
             'errors out if too many redirects': function(t) {
-t.skip();
                 qmock.mockHttp()
                     .when('http://hostname:80/foo')
                         .send(301, 'Moved.', { location: 'http://hostname:80/foo' });
